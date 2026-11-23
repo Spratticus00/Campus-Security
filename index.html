@@ -203,6 +203,12 @@ header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-
 .tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;padding:8px 4px 10px;border-top:0}
 .tabs .ic{width:23px;height:23px;display:block}
 .tabs button.on .ic{filter:drop-shadow(0 0 6px rgba(230,199,102,.55))}
+.upbtns{display:flex;gap:6px;align-items:stretch}
+.upbtns #nextRound{padding:7px 11px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap}
+.upbtns .jumpwrap{font-size:13px;padding:7px 11px;border-radius:10px;white-space:nowrap}
+.upbtns .sm{display:none}
+@media (max-width:379px){.upbtns .lg{display:none}.upbtns .sm{display:inline}}
+#histList .t{min-width:72px}
 </style>
 </head>
 <body>
@@ -228,7 +234,7 @@ header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-
     <button class="sec" id="skipBtn">Skip ▶</button>
   </div>
   <div class="card upcard">
-    <div class="uphead"><h2>Up next</h2><div class="jumpwrap"><select id="jump" aria-label="Jump to a door"></select><span>Jump to door ▾</span></div></div>
+    <div class="uphead"><h2>Up next</h2><div class="upbtns"><button class="sec" id="nextRound"><span class="lg">Start next round</span><span class="sm">Next round</span></button><div class="jumpwrap"><select id="jump" aria-label="Jump to a door"></select><span><span class="lg">Jump to door ▾</span><span class="sm">Jump ▾</span></span></div></div></div>
     <ul class="list up" id="upNext"></ul>
   </div>
 </section>
@@ -241,15 +247,19 @@ header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-
     <ul class="list" id="logList"></ul>
   </div>
   <div class="card">
-    <div class="uphead"><h2>Door check times</h2><button class="sec" id="nextRound" style="padding:8px 12px;font-size:14px">Start next round</button></div>
-    <p class="small" style="margin:0 0 8px">The exact minute each door was checked, every round. For your reference only: this doesn't go on the report.</p>
+    <h2>Door check times</h2>
+    <p class="small" style="margin:0 0 8px">The exact time, to the second, each door was checked, every round. For your reference only: this doesn't go on the report.</p>
     <div id="histList"></div>
   </div>
 </section>
 
 <!-- REPORT -->
 <section id="v-report" class="hide">
-  <button class="big sec" data-preview style="font-size:17px;padding:14px;background:var(--acc)">Preview report</button>
+  <div class="card">
+    <h2>New shift</h2>
+    <p class="small" style="margin:0 0 10px">Clears tonight's marks, entries and checklist and starts back at the first door. Save the shift or download the report first.</p>
+    <button class="big b-bad" id="newShift" style="font-size:18px;padding:16px">Start new shift</button>
+  </div>
   <div class="card">
     <h2>Shift details</h2>
     <label>Submitted by</label><div class="row"><select id="hOfficer" style="flex:3"></select><button class="sec" id="mgOfficers" style="flex:1">Names</button></div>
@@ -285,15 +295,6 @@ header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-
       <button class="sec" id="copyAll" style="background:var(--acc)">Copy report (with times)</button>
     </div>
     <p class="small" style="margin:8px 0 0">Each line is copied as its time, then its entry, like "1640  Building A north door was locked but not fully closed."</p>
-  </div>
-  <div class="card">
-    <h2>Unlatched doors tonight</h2>
-    <ul class="list" id="openList"></ul>
-  </div>
-  <div class="card">
-    <h2>New shift</h2>
-    <p class="small" style="margin:0 0 10px">Clears tonight's marks and entries and starts back at the first door. Copy your report first.</p>
-    <button class="big b-bad" id="newShift" style="font-size:18px;padding:16px">Start new shift</button>
   </div>
 </section>
 
@@ -443,6 +444,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 /* ---------- door check times (not on the report) ---------- */
 const hhmm=ts=>{const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')};
+const hhmmss=ts=>{const d=new Date(ts),p=n=>String(n).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())};
 const ST_SHORT={secure:'Locked',locked:'Unlocked',open:'Not Latched'};
 const openRounds={};
 function renderHist(){
@@ -452,8 +454,8 @@ function renderHist(){
   el.innerHTML=rounds.map(r=>{
     const hs=sh.hist.filter(h=>h.round===r).sort((a,b)=>b.ts-a.ts); // latest first, so the list reads bottom-up into the next round
     const isOpen=openRounds[r]!==undefined?openRounds[r]:r===sh.round;
-    return `<details class="rnd" data-r="${r}" ${isOpen?'open':''}><summary><span class="rbadge">Round ${r}</span><span class="rinfo">${hhmm(hs[hs.length-1].ts)}–${hhmm(hs[0].ts)} · ${hs.length} door${hs.length===1?'':'s'}</span><span class="rchev">▾</span></summary>
-      <ul class="list">${hs.map(h=>`<li><span class="t">${hhmm(h.ts)}</span><span class="grow">${esc(h.b)}${h.d?' · '+esc(doorLabel(h)):''}</span><span class="tag ${STATE_TXT[h.st][1]}">${ST_SHORT[h.st]}</span></li>`).join('')}</ul></details>`;
+    return `<details class="rnd" data-r="${r}" ${isOpen?'open':''}><summary><span class="rbadge">Round ${r}</span><span class="rinfo">${hhmmss(hs[hs.length-1].ts)}–${hhmmss(hs[0].ts)} · ${hs.length} door${hs.length===1?'':'s'}</span><span class="rchev">▾</span></summary>
+      <ul class="list">${hs.map(h=>`<li><span class="t">${hhmmss(h.ts)}</span><span class="grow">${esc(h.b)}${h.d?' · '+esc(doorLabel(h)):''}</span><span class="tag ${STATE_TXT[h.st][1]}">${ST_SHORT[h.st]}</span></li>`).join('')}</ul></details>`;
   }).join('');
   el.querySelectorAll('details').forEach(d=>d.ontoggle=()=>{openRounds[d.dataset.r]=d.open});
 }
@@ -842,8 +844,6 @@ function render(){
   if(S.tab==='report')renderHeader();
   if(S.tab==='report')renderReportText();
   renderHist();
-  const opens=sh.hist.filter(h=>h.st==='open').sort((a,b)=>a.ts-b.ts).map(h=>({b:h.b,d:h.d,_l:` (round ${h.round}, ${hhmm(h.ts)})`}));
-  document.getElementById('openList').innerHTML=opens.length?opens.map(d=>`<li><span>${esc(cap(doorName(d)))}<span class="small">${d._l}</span></span></li>`).join(''):'<li class="small">None so far.</li>';
 
   if(S.tab==='route'){
     document.getElementById('routeSel').innerHTML=S.routes.map((r,i)=>`<option value="${i}" ${i===S.active?'selected':''}>${esc(r.name)}</option>`).join('');
