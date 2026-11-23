@@ -109,17 +109,28 @@ main{padding:10px 12px 16px}
 #v-rounds .cur{padding:12px 14px;margin-bottom:8px}
 #v-rounds .prog{font-size:13px;margin-bottom:4px}
 #v-rounds .bar{height:4px;margin-bottom:8px}
-#v-rounds .bldg{font-size:26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-rounds .bldg{font-size:26px;line-height:1.15;overflow-wrap:anywhere}
 .drow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
-#v-rounds .door{font-size:19px;margin:0}
+#v-rounds .door{font-size:19px;margin:0;overflow-wrap:anywhere}
+#v-rounds .drow{align-items:flex-start}
 #v-rounds .state{margin:0;font-size:12px;white-space:nowrap}
-#v-rounds .big{padding:26px 12px;font-size:23px;margin-bottom:9px}
+#v-rounds .big{padding:clamp(12px,3.1vh,26px) 12px;font-size:23px;margin-bottom:9px;flex:none}
 .tools{gap:6px;margin-bottom:8px}
 .tools .sec{padding:11px 2px;font-size:13px}
 .upcard{padding:10px 14px;margin-bottom:0}
+/* Rounds tab is pinned to the screen: the page itself never scrolls; "Up next" fills whatever space is left. */
+body.lock{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;overscroll-behavior:none}
+body.lock header{flex:none}
+body.lock main{flex:1;min-height:0;width:100%;display:flex;flex-direction:column;overflow:hidden}
+body.lock #v-rounds{flex:1;min-height:0;display:flex;flex-direction:column}
+body.lock #v-rounds>*{flex:none}
+body.lock #v-rounds .upcard{flex:1 1 auto;min-height:48px;overflow:hidden;display:flex;flex-direction:column}
+body.lock .uphead{flex:none}
+@media (max-height:620px){#v-rounds .big{font-size:19px;margin-bottom:6px}#v-rounds .bldg{font-size:21px}#v-rounds .door{font-size:16px}#v-rounds .cur{padding:9px 12px}.tools .sec{padding:9px 2px}}
+body.lock #upNext{flex:1;min-height:0;overflow:hidden}
 .uphead{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
 .uphead h2{margin:0;font-size:16px}
-#upNext li{padding:8px 0;font-size:15px;align-items:center}
+#upNext li{padding:8px 0;font-size:15px;align-items:center;overflow-wrap:anywhere}
 .jumpwrap{position:relative;background:var(--panel2);border-radius:10px;display:flex;align-items:center;padding:7px 12px;font-weight:600;font-size:13px}
 .jumpwrap select{position:absolute;inset:0;opacity:0;width:100%;height:100%;padding:0}
 </style>
@@ -535,7 +546,8 @@ function combineDoors(list){
 function reportRows(){
   const rows=[];
   const H=S.shift.hdr||{};
-  if(H.recv&&H.recv.trim())rows.push({t:(H.from||'').trim()||(S.shift.log.length?slot(Math.min(...S.shift.log.map(e=>e.ts))):slot(S.shift.started)),text:`Received all equipment from Officer ${H.recv.trim()} in proper working order.`,own:1});
+  // first box: appears once a start time or the receiving officer is filled in
+  if((H.recv||'').trim()||(H.from||'').trim())rows.push({t:(H.from||'').trim()||(S.shift.log.length?slot(Math.min(...S.shift.log.map(e=>e.ts))):slot(S.shift.started)),text:`Received all equipment from Officer ${(H.recv||'').trim()||'________'} in proper working order.`,own:1});
   combineDoors(sortedLog()).forEach(e=>{
     const last=rows[rows.length-1];
     if(last&&!last.own&&last.t===e.t)last.text+='  '+e.text;else rows.push({t:e.t,text:e.text});
@@ -548,8 +560,9 @@ async function copy(txt,msg){
 }
 function repLines(){return currentReportText().split('\n').filter(l=>l.trim())}
 /* The report's last box: "Passed down all equipment to Officer ___ in proper working order." */
-function finalRow(){const H=hdr();return{t:(H.to||'').trim(),text:`Passed down all equipment to Officer ${(H.passTo||'').trim()||'________'} in proper working order.`}}
-const autoText=()=>[...reportRows(),finalRow()].map(r=>r.t+'\t'+r.text).join('\n');
+// last box: appears once an end time or the officer taking over is filled in
+function finalRow(){const H=hdr();if(!(H.to||'').trim()&&!(H.passTo||'').trim())return null;return{t:(H.to||'').trim(),text:`Passed down all equipment to Officer ${(H.passTo||'').trim()||'________'} in proper working order.`}}
+const autoText=()=>[...reportRows(),finalRow()].filter(Boolean).map(r=>r.t+'\t'+r.text).join('\n');
 function currentReportText(){return autoText()}
 function renderReportText(){document.getElementById('repText').value=autoText()}
 if(S.shift&&S.shift.repEdit){delete S.shift.repEdit;save()}
@@ -704,7 +717,7 @@ function render(){
     document.getElementById('curD').textContent='Open the Route tab';
   }
   const up=document.getElementById('upNext');
-  up.innerHTML=DOORS.slice(sh.idx+1,sh.idx+5).map((d,k)=>`<li data-i="${sh.idx+1+k}"><span class="grow">${esc(d.b)}${d.d?' · '+esc(doorLabel(d)):''}</span>${sh.marks[d.id]?`<span class="tag ${STATE_TXT[sh.marks[d.id]][1]}">${STATE_TXT[sh.marks[d.id]][0]}</span>`:''}</li>`).join('')||'<li class="small">End of route</li>';
+  up.innerHTML=DOORS.slice(sh.idx+1,sh.idx+25).map((d,k)=>`<li data-i="${sh.idx+1+k}"><span class="grow">${esc(d.b)}${d.d?' · '+esc(doorLabel(d)):''}</span>${sh.marks[d.id]?`<span class="tag ${STATE_TXT[sh.marks[d.id]][1]}">${STATE_TXT[sh.marks[d.id]][0]}</span>`:''}</li>`).join('')||'<li class="small">End of route</li>';
   up.querySelectorAll('li[data-i]').forEach(li=>li.onclick=()=>{sh.idx=+li.dataset.i;save();render()});
   fitUpNext();
   document.getElementById('jump').innerHTML=DOORS.map((d,i)=>`<option value="${i}" ${i===sh.idx?'selected':''}>${i+1}. ${esc(d.b)}${d.d?' · '+esc(doorLabel(d)):''}${sh.marks[d.id]?' ✓':''}</option>`).join('');
@@ -748,7 +761,7 @@ const withMi=v=>{v=(v||'').trim();return v&&/^[\d.]+$/.test(v)?v+'mi':v};
     hdr()[k]=v;
     save();
     document.getElementById('hTotal').textContent=totalMiles(hdr())?'Total miles driven: '+totalMiles(hdr()):'';
-    if(k==='recv'||k==='from')renderReportText();
+    if(k==='from'||k==='to')renderReportText();
   });
 });
 if(!S.officers){S.officers=S.officer?[S.officer]:[];delete S.officer}
@@ -771,7 +784,7 @@ function addOfficerSheet(after){
 [['hOfficer','officer'],['hRecv','recv'],['hPass','passTo']].forEach(([id,k])=>{
   document.getElementById(id).onchange=e=>{
     const v=e.target.value;
-    if(v==='__add'){addOfficerSheet(n=>{if(n)hdr()[k]=n;save();renderOfficerSel()});return}
+    if(v==='__add'){addOfficerSheet(n=>{if(n)hdr()[k]=n;save();renderOfficerSel();renderReportText()});return}
     hdr()[k]=v;save();if(k!=='officer')renderReportText();
   };
 });
@@ -843,10 +856,10 @@ function paginate(rows){
     p.rows.push({...r,h});p.used+=h;
   });
   // the closing line needs room on the last page; if it won't fit, it starts a new page
-  const lp=pages[pages.length-1],fh=rowH(fin.text,lp.cpl);
+  const lp=pages[pages.length-1],fh=fin?rowH(fin.text,lp.cpl):0;
   if(fh>ROW_MIN&&lp.used+fh>lp.cap){pages.push({rows:[],used:0,cap:PN_CAP,cpl:92})}
   pages.forEach((p,k)=>{
-    const last=k===pages.length-1,end=last?{...fin,h:rowH(fin.text,p.cpl)}:{t:'',text:'Continued.',h:ROW_MIN};
+    const last=k===pages.length-1,end=last?(fin?{...fin,h:rowH(fin.text,p.cpl)}:{t:'',text:'',h:ROW_MIN}):{t:'',text:'Continued.',h:ROW_MIN};
     const blanks=Math.floor((p.cap-p.used-end.h)/ROW_MIN);
     // last page: the passed-down line follows the last entry; other pages: "Continued." in the bottom box
     if(last)p.rows.push(end);
@@ -1087,12 +1100,18 @@ document.getElementById('bkRestore').onclick=()=>openSheet(`<h2>Restore from bac
 });
 
 /* Show as many "Up next" doors (up to 4, at least 1) as fit without scrolling. */
+/* Show as many upcoming doors as fit in the space left; drop any that would be cut off. */
 function fitUpNext(){
+  document.body.classList.toggle('lock',S.tab==='rounds');
   if(S.tab!=='rounds')return;
+  // the card's header (with "Jump to door") always stays; only list rows that don't fit are dropped
   const up=document.getElementById('upNext');
-  while(up.children.length>1&&document.documentElement.scrollHeight>window.innerHeight)up.lastElementChild.remove();
+  const limit=up.getBoundingClientRect().bottom;
+  while(up.children.length&&up.lastElementChild.getBoundingClientRect().bottom>limit+1)up.lastElementChild.remove();
 }
-let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(render,150)});
+let rz;const rerender=()=>{clearTimeout(rz);rz=setTimeout(render,150)};
+window.addEventListener('resize',rerender);window.addEventListener('orientationchange',rerender);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')rerender()});
 render();
 /* Works with no signal: a small service worker keeps a copy of the app on the phone. */
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
