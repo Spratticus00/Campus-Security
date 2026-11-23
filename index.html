@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Campus Security">
+<meta name="theme-color" content="#0e1013">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Campus Security</title>
+<style>
+:root{--bg:#0e1013;--panel:#181b20;--panel2:#20242b;--line:#2c313a;--text:#eceef1;--mute:#9aa1ab;--ok:#2f9e5b;--warn:#d08a1c;--bad:#c9473d;--acc:#4c8dff}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;border:0;border-radius:12px;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%}
+textarea{resize:vertical}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+body{padding-bottom:env(safe-area-inset-bottom)}
+.pv{padding-top:env(safe-area-inset-top)}
+.tabs{display:flex}
+.tabs button{flex:1;background:none;padding:14px 4px;border-radius:0;color:var(--mute);font-weight:600;border-bottom:3px solid transparent}
+.tabs button.on{color:var(--text);border-bottom-color:var(--acc)}
+main{padding:14px;max-width:560px;margin:0 auto;padding-bottom:60px}
+.hide{display:none!important}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.prog{display:flex;justify-content:space-between;color:var(--mute);font-size:14px;margin-bottom:6px}
+.bar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-bottom:14px}
+.bar i{display:block;height:100%;background:var(--acc)}
+.bldg{font-size:30px;font-weight:750;line-height:1.15}
+.door{font-size:22px;color:var(--mute);margin-top:2px}
+.state{display:inline-block;margin-top:10px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--panel2);color:var(--mute)}
+.s-secure{background:#173a26;color:#7fe0a5}.s-locked{background:#3d2c10;color:#f3c272}.s-open{background:#43201c;color:#ff9d93}
+.big{display:block;width:100%;padding:22px;font-size:22px;font-weight:750;margin-bottom:10px}
+.b-ok{background:var(--ok)}.b-warn{background:var(--warn)}.b-bad{background:var(--bad)}
+.row{display:flex;gap:10px}
+.row>*{flex:1}
+.sec{background:var(--panel2);padding:14px;font-weight:600}
+.small{font-size:14px;color:var(--mute)}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.list li:last-child{border-bottom:0}
+.t{font-variant-numeric:tabular-nums;font-weight:700;min-width:44px}
+.grow{flex:1}
+.x{background:none;color:var(--mute);padding:2px 8px;font-size:18px}
+h2{font-size:17px;margin:0 0 10px}
+label{display:block;font-size:14px;color:var(--mute);margin:10px 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{background:var(--panel2);padding:10px 14px;border:1px solid var(--line)}
+.chips button.on{background:var(--acc);border-color:var(--acc)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{background:var(--panel);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px;max-height:90vh;overflow:auto}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff;color:#000;padding:10px 16px;border-radius:20px;font-weight:600;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.up li{cursor:pointer}
+.tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:10px}
+pre{white-space:pre-wrap;margin:0;font:inherit}
+#stopList li{align-items:center;background:var(--panel);touch-action:pan-y}
+#stopList li.drag{background:var(--panel2);outline:2px solid var(--acc);border-radius:10px}
+.h{touch-action:none;padding:8px 10px;color:var(--mute);font-size:20px;cursor:grab;user-select:none;-webkit-user-select:none}
+.arr{background:var(--panel2);padding:8px 12px;font-size:14px}
+.num{color:var(--mute);font-size:13px;min-width:22px;text-align:right}
+.ed{cursor:pointer}
+.ed small{color:var(--mute)}
+.dl li{align-items:center}
+#chkList li{padding:7px 0;align-items:center;cursor:pointer;font-size:15px}
+.yn{font-size:12px;font-weight:700;padding:4px 10px;border-radius:10px;background:var(--panel2);color:var(--mute)}
+.yn.yes{background:var(--warn);color:#fff}
+/* confirmation pop-up */
+.cf{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:24px}
+.cfbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;width:100%;max-width:360px;font-size:17px}
+.cfbox .sec{padding:14px}
+/* colour flash around the screen edge after a door tap */
+.flash{position:fixed;inset:0;z-index:35;pointer-events:none;opacity:0;box-shadow:inset 0 0 0 2px var(--fd),inset 0 0 6px 3px var(--fd),inset 0 0 22px 6px var(--fc)}
+.flash.go{animation:fl .55s ease-out}
+@keyframes fl{0%{opacity:0}18%{opacity:1}45%{opacity:1}100%{opacity:0}}
+/* report preview */
+.pv{position:fixed;inset:0;z-index:25;background:#3a3d42;display:flex;flex-direction:column}
+.pvbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
+.pvbar .sec{padding:9px 14px;font-size:14px}
+.pvscroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:10px}
+.pvsize{position:relative}
+.paper{position:absolute;left:0;top:0;transform-origin:0 0;width:816px;height:1056px;overflow:hidden;background:#fff;color:#000;padding:40px 48px;font:13.3px/1.15 Arial,Helvetica,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.paper table{border-collapse:collapse;table-layout:fixed}
+.paper td{vertical-align:top;padding:0}
+.paper .bx td{border:1px solid #000}
+.paper .brand{display:flex;align-items:flex-start;gap:6px}
+.paper .brand img{width:67px}
+.paper .brand div{flex:1;text-align:center;font-weight:700;font-size:12px;line-height:1.2;padding-top:4px}
+.paper .banner{background:#000;color:#fff;font-weight:700;font-size:24px;text-align:center;padding:5px 0}
+.paper .f{margin-top:12px;display:flex}
+.paper .f span{flex:none}
+.paper b{font-weight:700}
+.paper .chk td{font-size:9.3px;padding:1px 3px;vertical-align:middle;height:40px}
+.paper .chk .mk{text-align:center;font-size:16px}
+.paper .chk .hd td{height:auto}
+.paper .act td{height:29px;padding:1px 5px;font-size:13.3px;line-height:1.15}
+.paper .pgno{text-align:right;font-size:10.7px;margin-top:8px}
+.paper .act .tm{text-align:center;font-size:21px;line-height:1.1}
+.paper .foot{margin-top:24px;display:flex}
+.paper .sig{margin-top:22px;display:flex;justify-content:space-between;padding-right:10px}
+/* compact Rounds tab: fits one phone screen */
+.tabs button{padding:11px 4px}
+main{padding:10px 12px 16px}
+#v-rounds .cur{padding:12px 14px;margin-bottom:8px}
+#v-rounds .prog{font-size:13px;margin-bottom:4px}
+#v-rounds .bar{height:4px;margin-bottom:8px}
+#v-rounds .bldg{font-size:26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
+#v-rounds .door{font-size:19px;margin:0}
+#v-rounds .state{margin:0;font-size:12px;white-space:nowrap}
+#v-rounds .big{padding:26px 12px;font-size:23px;margin-bottom:9px}
+.tools{gap:6px;margin-bottom:8px}
+.tools .sec{padding:11px 2px;font-size:13px}
+.upcard{padding:10px 14px;margin-bottom:0}
+.uphead{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.uphead h2{margin:0;font-size:16px}
+#upNext li{padding:8px 0;font-size:15px;align-items:center}
+.jumpwrap{position:relative;background:var(--panel2);border-radius:10px;display:flex;align-items:center;padding:7px 12px;font-weight:600;font-size:13px}
+.jumpwrap select{position:absolute;inset:0;opacity:0;width:100%;height:100%;padding:0}
+</style>
+</head>
+<body>
+<header>
+  <div class="tabs">
+    <button data-tab="rounds" class="on">Rounds</button>
+    <button data-tab="log">Log</button>
+    <button data-tab="report">Report</button>
+    <button data-tab="route">Route</button>
+  </div>
+</header>
+
+<main>
+<!-- ROUNDS -->
+<section id="v-rounds">
+  <div class="card cur">
+    <div class="prog"><span id="progTxt"></span><span id="doneTxt"></span></div>
+    <div class="bar"><i id="progBar"></i></div>
+    <div class="bldg" id="curB"></div>
+    <div class="drow"><span class="door" id="curD"></span><span class="state" id="curS"></span></div>
+  </div>
+  <button class="big b-ok" data-mark="secure">Locked</button>
+  <button class="big b-warn" data-mark="locked">Unlocked</button>
+  <button class="big b-bad" data-mark="open">Not Latched</button>
+  <div class="row tools">
+    <button class="sec" id="backBtn">◀ Back</button>
+    <button class="sec" id="noteBtn">Note</button>
+    <button class="sec" id="freezerBtn">Freezer</button>
+    <button class="sec" id="boilerBtn">Boiler</button>
+    <button class="sec" id="skipBtn">Skip ▶</button>
+  </div>
+  <div class="card upcard">
+    <div class="uphead"><h2>Up next</h2><div class="jumpwrap"><select id="jump" aria-label="Jump to a door"></select><span>Jump to door ▾</span></div></div>
+    <ul class="list up" id="upNext"></ul>
+  </div>
+</section>
+
+<!-- LOG -->
+<section id="v-log" class="hide">
+  <div class="card">
+    <div class="uphead"><h2>Tonight's entries</h2><button class="sec" data-preview style="padding:8px 12px;font-size:14px;background:var(--acc)">Preview report</button></div>
+    <p class="small" style="margin:0 0 8px">Only exceptions are logged. Tap an entry to edit it.</p>
+    <ul class="list" id="logList"></ul>
+  </div>
+  <div class="card">
+    <div class="uphead"><h2>Door check times</h2><button class="sec" id="nextRound" style="padding:8px 12px;font-size:14px">Start next round</button></div>
+    <p class="small" style="margin:0 0 8px">The exact minute each door was checked, every round. For your reference only: this doesn't go on the report.</p>
+    <div id="histList"></div>
+  </div>
+</section>
+
+<!-- REPORT -->
+<section id="v-report" class="hide">
+  <button class="big sec" data-preview style="font-size:17px;padding:14px;background:var(--acc)">Preview report</button>
+  <div class="card">
+    <h2>Shift details</h2>
+    <label>Submitted by</label><div class="row"><select id="hOfficer" style="flex:3"></select><button class="sec" id="mgOfficers" style="flex:1">Names</button></div>
+    <div class="row">
+      <div><label>Date</label><input id="hDate" placeholder="MM/DD/YY"></div>
+      <div><label>Shift from</label><input id="hFrom" inputmode="numeric" maxlength="4"></div>
+      <div><label>To</label><input id="hTo" inputmode="numeric" maxlength="4"></div>
+    </div>
+    <label>Received equipment from Officer (first line of the report)</label><select id="hRecv"></select>
+    <label>Passed down equipment to Officer (last line of the report)</label><select id="hPass"></select>
+    <div class="row">
+      <div><label>Starting mileage</label><input id="hStart" inputmode="decimal"></div>
+      <div><label>Ending mileage</label><input id="hEnd" inputmode="decimal"></div>
+    </div>
+    <p class="small" id="hTotal" style="margin:6px 0 0"></p>
+  </div>
+  <div class="card">
+    <h2>Checklist (1–17)</h2>
+    <p class="small" style="margin:0 0 6px">All are marked <b>No</b> unless you tap one to make it <b>Yes</b>. Items marked Yes must be explained in the report.</p>
+    <ul class="list" id="chkList"></ul>
+  </div>
+  <div class="row" style="margin-bottom:12px">
+    <button class="big sec" id="pvBtn" style="font-size:17px;padding:16px;margin:0;background:var(--acc)">Preview report</button>
+    <button class="big b-ok" id="dlDocx" style="font-size:17px;padding:16px;margin:0">Share / Save .docx</button>
+  </div>
+  <div class="card">
+    <h2>Report for Word</h2>
+    <p class="small syncStatus" style="margin:0 0 6px;color:var(--text)"></p>
+    <p class="small" style="margin:0 0 8px">Updates as soon as you mark a door or add an entry. Entries in the same 5-minute slot share one time, like your handwritten reports. To change wording or a time, tap the entry in the Log tab.</p>
+    
+    <textarea id="repText" rows="14" readonly></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="sec" id="copyAll" style="background:var(--acc)">Copy report (with times)</button>
+    </div>
+    <p class="small" style="margin:8px 0 0">Each line is copied as its time, then its entry, like "1640  Building A north door was locked but not fully closed."</p>
+  </div>
+  <div class="card">
+    <h2>Unlatched doors tonight</h2>
+    <ul class="list" id="openList"></ul>
+  </div>
+  <div class="card">
+    <h2>New shift</h2>
+    <p class="small" style="margin:0 0 10px">Clears tonight's marks and entries and starts back at the first door. Copy your report first.</p>
+    <button class="big b-bad" id="newShift" style="font-size:18px;padding:16px">Start new shift</button>
+  </div>
+</section>
+
+<!-- ROUTE -->
+<section id="v-route" class="hide">
+  <div class="card">
+    <h2>Route</h2>
+    <select id="routeSel"></select>
+    <div class="row" style="margin-top:10px">
+      <button class="sec" id="rNew">New copy</button>
+      <button class="sec" id="rRename">Rename</button>
+      <button class="sec" id="rDelete">Delete</button>
+    </div>
+    <p class="small" style="margin:8px 0 0">Each officer can keep their own route. "New copy" duplicates the route shown, so you can reorder it without changing the original.</p>
+  </div>
+  <div class="card">
+    <h2>Stops in order</h2>
+    <p class="small" style="margin:0 0 8px">Drag ☰ or use the arrows to reorder. Tap a stop to rename it or change its doors and their order.</p>
+    <div class="row" style="margin-bottom:10px">
+      <button class="sec" id="addStop">+ Add stop</button>
+      <button class="sec" id="reverseR">Reverse</button>
+      <button class="sec" id="textEdit">Edit as text</button>
+    </div>
+    <ul class="list" id="stopList"></ul>
+    <p class="small" id="routeCount"></p>
+  </div>
+  <div class="card">
+    <h2>Share a route</h2>
+    <p class="small" style="margin:0 0 10px">Copy a route and send it to a coworker. They paste it here as a new route, then reorder it however they walk.</p>
+    <div class="row">
+      <button class="sec" id="rCopy">Copy route</button>
+      <button class="sec" id="rPaste">Paste a route</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Freezer locations</h2>
+    <p class="small" style="margin:0 0 8px">One per line, written the way they appear in your report.</p>
+    <textarea id="frzText" rows="3"></textarea>
+    <button class="sec" id="saveFrz" style="margin-top:10px;width:100%">Save freezers</button>
+  </div>
+  <div class="card">
+    <h2>Saving &amp; backup</h2>
+    <p class="small" style="margin:0 0 8px">Everything (routes, tonight's taps, notes and report details) is saved on this phone after every tap. Closing the app or turning off the phone won't lose anything. Clearing Safari's website data would erase it, so keep a copy of your route (Copy route) in Notes.</p>
+    <p class="small syncStatus" style="margin:0;color:var(--text)"></p>
+    <p class="small" style="margin:10px 0 8px"><b style="color:var(--text)">Back up everything</b> (all routes, stops, tonight's entries, names and report details) before an app update or whenever you've made big changes. Email the file to yourself or keep it in Files.</p>
+    <div class="row">
+      <button class="sec" id="bkSave" style="background:var(--acc)">Save backup file</button>
+      <button class="sec" id="bkCopy">Copy backup</button>
+    </div>
+    <button class="sec" id="bkRestore" style="width:100%;margin-top:8px">Restore from backup</button>
+  </div>
+</section>
+</main>
+
+<div class="modal hide" id="modal"><div class="sheet" id="sheet"></div></div>
+<div class="pv hide" id="pv">
+  <div class="pvbar"><button class="sec" id="pvClose">✕ Close</button><span id="pvTitle" class="small"></span><button class="sec" id="pvZoom">Zoom in</button></div>
+  <div class="pvscroll" id="pvScroll"><div class="pvsize" id="pvSize"></div></div>
+</div>
+<div class="cf hide" id="cf"><div class="cfbox"><div id="cfMsg"></div><div class="row" style="margin-top:16px"><button class="sec" id="cfNo">Cancel</button><button class="sec" id="cfYes" style="background:var(--bad)">Delete</button></div></div></div>
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const DIR={N:'north',S:'south',E:'east',W:'west',NE:'northeast',NW:'northwest',SE:'southeast',SW:'southwest'};
+const KEY='doorRounds.v1';
+/* Default route for phones opening the app for the first time. */
+const DEFAULT_ROUTE_NAME='My route';
+const SAMPLE=``;
+
+function load(){try{const s=localStorage.getItem(KEY);if(s)return JSON.parse(s)}catch(e){}return null}
+function newShiftObj(){return{started:Date.now(),idx:0,round:1,marks:{},log:[],hist:[]}}
+/* Every change is saved twice: instantly on this phone (works with no signal),
+   and backed up to the officer's own private space in their Claude account when there's signal.
+   On opening, whichever copy is newer is used, so closing the app or turning off the phone loses nothing. */
+function save(){S.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+function textToStops(txt){
+  const stops=[];
+  txt.split('\n').forEach(line=>{
+    line=line.trim();if(!line||line.startsWith('#'))return;
+    const c=line.indexOf(':');
+    if(c<0){stops.push({b:line,doors:[]});return}
+    stops.push({b:line.slice(0,c).trim(),doors:line.slice(c+1).split(',').map(x=>x.trim()).filter(Boolean)});
+  });
+  return stops.filter(s=>s.b);
+}
+function stopsToText(stops){return stops.map(s=>s.doors.length?s.b+': '+s.doors.join(', '):s.b).join('\n')}
+function flatten(stops){
+  const out=[];
+  stops.forEach(s=>{if(!s.doors.length)out.push({b:s.b,d:''});else s.doors.forEach(d=>out.push({b:s.b,d}))});
+  return out.map(x=>({...x,id:x.b+'|'+x.d}));
+}
+
+const FRESH_START=!load();
+let S=load()||{freezers:['Dining Hall','Food Co-op'],tab:'rounds',shift:newShiftObj()};
+if(!S.routes){S.routes=[{name:DEFAULT_ROUTE_NAME,stops:textToStops(S.routeText||SAMPLE)}];S.active=0;delete S.routeText}
+if(!(S.active>=0&&S.active<S.routes.length))S.active=0;
+const R=()=>S.routes[S.active];
+normalize();
+if(!S.shift.round)S.shift.round=1;
+if(!S.shift.hist)S.shift.hist=[];
+let DOORS=flatten(R().stops);
+
+/* Rebuild the door list after a route change, keeping the officer on the same door. */
+function routeChanged(){
+  const curId=DOORS[S.shift.idx]&&DOORS[S.shift.idx].id;
+  DOORS=flatten(R().stops);
+  const k=DOORS.findIndex(d=>d.id===curId);
+  S.shift.idx=k>=0?k:Math.min(S.shift.idx,Math.max(0,DOORS.length-1));
+  save();render();
+}
+
+function doorName(x){
+  if(!x.d)return x.b;
+  const k=x.d.toUpperCase().replace(/\s+/g,'');
+  if(DIR[k])return x.b+' '+DIR[k]+' door';
+  return x.b+' '+x.d;
+}
+function doorLabel(x){
+  if(!x.d)return '';
+  const k=x.d.toUpperCase().replace(/\s+/g,'');
+  return DIR[k]?DIR[k][0].toUpperCase()+DIR[k].slice(1)+' door':x.d;
+}
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+function sentence(x,st){
+  if(st==='locked')return 'Locked '+doorName(x)+'.';
+  if(st==='open')return cap(doorName(x))+' was locked but not fully closed.';
+  return '';
+}
+function slot(ts){
+  const d=new Date(ts);let m=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+  m=(Math.round(m/5)*5)%1440;
+  return String(Math.floor(m/60)).padStart(2,'0')+String(m%60).padStart(2,'0');
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),1400)}
+
+/* ---------- door check times (not on the report) ---------- */
+const hhmm=ts=>{const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')};
+const ST_SHORT={secure:'Locked',locked:'Unlocked',open:'Not Latched'};
+const openRounds={};
+function renderHist(){
+  const sh=S.shift,el=document.getElementById('histList');
+  if(!sh.hist.length){el.innerHTML='<p class="small" style="margin:0">No doors checked yet.</p>';return}
+  const rounds=[...new Set(sh.hist.map(h=>h.round))].sort((a,b)=>b-a);
+  el.innerHTML=rounds.map(r=>{
+    const hs=sh.hist.filter(h=>h.round===r).sort((a,b)=>a.ts-b.ts);
+    const isOpen=openRounds[r]!==undefined?openRounds[r]:r===sh.round;
+    return `<details data-r="${r}" ${isOpen?'open':''} style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:700;padding:6px 0">Round ${r} · ${hs.length} door${hs.length===1?'':'s'} · ${hhmm(hs[0].ts)}–${hhmm(hs[hs.length-1].ts)}</summary>
+      <ul class="list">${hs.map(h=>`<li><span class="t">${hhmm(h.ts)}</span><span class="grow">${esc(h.b)}${h.d?' · '+esc(doorLabel(h)):''}</span><span class="tag ${STATE_TXT[h.st][1]}">${ST_SHORT[h.st]}</span></li>`).join('')}</ul></details>`;
+  }).join('');
+  el.querySelectorAll('details').forEach(d=>d.ontoggle=()=>{openRounds[d.dataset.r]=d.open});
+}
+
+/* ---------- confirmation pop-up ---------- */
+function confirmBox(msg,okLabel,onOk){
+  document.getElementById('cfMsg').innerHTML=msg;
+  const yes=document.getElementById('cfYes');yes.textContent=okLabel||'Delete';
+  const box=document.getElementById('cf');box.classList.remove('hide');
+  document.getElementById('cfNo').onclick=()=>box.classList.add('hide');
+  yes.onclick=()=>{box.classList.add('hide');onOk()};
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;save();render()});
+
+/* ---------- marking ---------- */
+document.getElementById('nextRound').onclick=()=>confirmBox(`Start round ${S.shift.round+1}?<br><span class="small">Goes back to the first door. Round ${S.shift.round}'s times and entries are kept.</span>`,'Start round '+(S.shift.round+1),startNextRound);
+let busy=false;
+const FLASH={secure:['rgba(47,158,91,.55)','#1f7a44'],locked:['rgba(208,138,28,.55)','#a86a0c'],open:['rgba(201,71,61,.55)','#9e2f27']};
+function mark(st){
+  const sh=S.shift;if(!DOORS.length||busy)return;
+  busy=true;
+  const f=document.getElementById('flash');f.style.setProperty('--fc',FLASH[st][0]);f.style.setProperty('--fd',FLASH[st][1]);f.classList.remove('go');void f.offsetWidth;f.classList.add('go');
+  setTimeout(()=>{busy=false;commitMark(st)},380);
+}
+function commitMark(st){
+  const sh=S.shift;
+  const x=DOORS[sh.idx],rd=sh.round,ts=Date.now();
+  sh.marks[x.id]=st;
+  // Only a re-tap of the same door in the SAME round replaces its earlier record (a correction).
+  sh.log=sh.log.filter(e=>!(e.doorId===x.id&&(e.round||1)===rd));
+  if(st!=='secure')sh.log.push({ts,t:slot(ts),text:sentence(x,st),doorId:x.id,round:rd,st});
+  const rec={ts,doorId:x.id,b:x.b,d:x.d,st,round:rd};
+  const k=sh.hist.findIndex(h=>h.doorId===x.id&&h.round===rd);
+  if(k>=0)sh.hist[k]=rec;else sh.hist.push(rec);
+  const last=sh.idx>=DOORS.length-1;
+  if(!last)sh.idx++;
+  save();render();
+  if(st!=='secure')toast(st==='locked'?'Logged: Unlocked':'Logged: Not Latched');
+  if(last)confirmBox(`Round ${rd} complete.<br><span class="small">Start round ${rd+1} from the first door? Round ${rd}'s times are kept.</span>`,'Start round '+(rd+1),startNextRound);
+}
+document.querySelectorAll('[data-mark]').forEach(b=>b.onclick=()=>mark(b.dataset.mark));
+function startNextRound(){const sh=S.shift;sh.round++;sh.marks={};sh.idx=0;S.tab='rounds';save();render();toast('Round '+sh.round+' started')}
+document.getElementById('backBtn').onclick=()=>{if(S.shift.idx>0){S.shift.idx--;save();render()}};
+document.getElementById('skipBtn').onclick=()=>{if(S.shift.idx<DOORS.length-1){S.shift.idx++;save();render()}};
+document.getElementById('jump').onchange=e=>{S.shift.idx=+e.target.value;save();render()};
+
+/* ---------- modal sheets ---------- */
+const modal=document.getElementById('modal'),sheet=document.getElementById('sheet');
+function openSheet(html,onReady){sheet.innerHTML=html;modal.classList.remove('hide');onReady&&onReady()}
+function closeSheet(){modal.classList.add('hide')}
+modal.onclick=e=>{if(e.target===modal)closeSheet()};
+function addEntry(text,t){const ts=Date.now();S.shift.log.push({ts,t:t||slot(ts),text});save();render()}
+function timeField(){return `<label>Time</label><input id="fTime" inputmode="numeric" maxlength="4" value="${slot(Date.now())}">`}
+function getTime(){const v=document.getElementById('fTime').value.trim();return /^\d{4}$/.test(v)?v:slot(Date.now())}
+
+document.getElementById('noteBtn').onclick=()=>openSheet(`
+  <h2>Add note</h2>${timeField()}
+  <label>Note</label><textarea id="fNote" rows="3" placeholder="Note"></textarea>
+  <div class="row" style="margin-top:12px"><button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Add</button></div>`,()=>{
+  document.getElementById('fNote').focus();
+  document.getElementById('fCancel').onclick=closeSheet;
+  document.getElementById('fSave').onclick=()=>{let v=document.getElementById('fNote').value.trim();if(!v)return;if(!/[.!?]$/.test(v))v+='.';addEntry(cap(v),getTime());closeSheet();toast('Note added')};
+});
+
+document.getElementById('freezerBtn').onclick=()=>{
+  let pick=S.freezers[0]||'';
+  openSheet(`
+  <h2>Freezer check</h2>${timeField()}
+  <label>Location</label><div class="chips" id="fLoc">${S.freezers.map((f,i)=>`<button data-f="${esc(f)}" class="${i?'':'on'}">${esc(f)}</button>`).join('')}</div>
+  <label>Result</label><input id="fRes" value="All good">
+  <div class="row" style="margin-top:12px"><button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Add</button></div>`,()=>{
+    document.querySelectorAll('#fLoc button').forEach(b=>b.onclick=()=>{pick=b.dataset.f;document.querySelectorAll('#fLoc button').forEach(x=>x.classList.toggle('on',x===b))});
+    document.getElementById('fCancel').onclick=closeSheet;
+    document.getElementById('fSave').onclick=()=>{let r=document.getElementById('fRes').value.trim()||'All good';if(!/[.!?]$/.test(r))r+='.';addEntry(`Checked ${pick} freezer temperatures.  ${r}`,getTime());closeSheet();toast('Freezer logged')};
+  });
+};
+
+document.getElementById('boilerBtn').onclick=()=>{
+  let on='off';
+  openSheet(`
+  <h2>Boiler check</h2>${timeField()}
+  <label>Pressure (psi)</label><input id="fPsi" inputmode="decimal" placeholder="0.5">
+  <label>Result</label><input id="fRes" value="All good">
+  <label>Boiler</label><div class="chips" id="fOn"><button data-v="on">On</button><button data-v="off" class="on">Off</button></div>
+  <div class="row" style="margin-top:12px"><button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Add</button></div>`,()=>{
+    document.getElementById('fPsi').focus();
+    document.querySelectorAll('#fOn button').forEach(b=>b.onclick=()=>{on=b.dataset.v;document.querySelectorAll('#fOn button').forEach(x=>x.classList.toggle('on',x===b))});
+    document.getElementById('fCancel').onclick=closeSheet;
+    document.getElementById('fSave').onclick=()=>{
+      const p=document.getElementById('fPsi').value.trim();const r=document.getElementById('fRes').value.trim()||'All good';
+      addEntry(`Checked Boiler psi.  ${r}${p?'; '+p+'psi':''}.  Boiler ${on}.`,getTime());closeSheet();toast('Boiler logged')};
+  });
+};
+
+/* ---------- log editing ---------- */
+/* Entries are ordered by the time written on them (so a note entered later with an earlier time
+   lands in its place), on a timeline that starts at the shift's start and runs past midnight. */
+const toMin=t=>/^\d{4}$/.test(t||'')?(+t.slice(0,2))*60+(+t.slice(2)):NaN;
+function shiftStartMin(){
+  const from=toMin((hdr().from||'').trim());if(!isNaN(from))return from;
+  const sh=S.shift,all=[...sh.log.map(e=>e.ts),...(sh.hist||[]).map(h=>h.ts)];
+  const d=new Date(all.length?Math.min(...all):sh.started);return d.getHours()*60+d.getMinutes()-60;
+}
+function sortedLog(){
+  const a0=shiftStartMin();
+  const key=e=>{let m=toMin(e.t);if(isNaN(m))return Infinity;if(m<a0)m+=1440;return m};
+  return S.shift.log.map((e,i)=>({...e,i})).sort((a,b)=>(key(a)-key(b))||(a.ts-b.ts));
+}
+function editEntry(i){
+  const e=S.shift.log[i];
+  openSheet(`<h2>Edit entry</h2>
+  <label>Time</label><input id="fTime" inputmode="numeric" maxlength="4" value="${e.t}">
+  <label>Text</label><textarea id="fNote" rows="3">${esc(e.text)}</textarea>
+  <div class="row" style="margin-top:12px"><button class="sec" style="background:var(--bad)" id="fDel">Delete</button><button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Save</button></div>`,()=>{
+    document.getElementById('fCancel').onclick=closeSheet;
+    document.getElementById('fDel').onclick=()=>confirmBox('Delete this entry?<br><span class="small">'+esc(e.text)+'</span>','Delete',()=>{if(e.doorId&&(e.round||1)===S.shift.round)delete S.shift.marks[e.doorId];S.shift.log.splice(i,1);save();render();closeSheet();toast('Deleted')});
+    document.getElementById('fSave').onclick=()=>{const v=document.getElementById('fTime').value.trim();if(/^\d{4}$/.test(v))e.t=v;{const nt=document.getElementById('fNote').value.trim();if(nt&&nt!==e.text){e.text=nt;e.edited=true}}save();render();closeSheet()};
+  });
+}
+
+/* ---------- report ---------- */
+/* Doors of the same building checked back-to-back in the same round are written as one sentence:
+   "Locked Building A west door and locked the north door."
+   Stops without compass doors and hand-edited entries stay as written. */
+function doorInfo(e){
+  if(!e.doorId||e.edited)return null;
+  const k=e.doorId.indexOf('|'),b=e.doorId.slice(0,k),d=e.doorId.slice(k+1);
+  const dir=DIR[(d||'').toUpperCase().replace(/\s+/g,'')];
+  if(!dir)return null;
+  const st=e.st||(/^Locked /.test(e.text)?'locked':'open');
+  return {b,dir,st,round:e.round||1};
+}
+function listWords(a){return a.length<3?a.join(' and '):a.slice(0,-1).join(', ')+', and '+a[a.length-1]}
+function groupText(g){
+  // e.g. "Building A south door was locked but not fully closed, locked the west door, north door was locked but not fully closed."
+  const clauses=g.seq.map((x,k)=>{
+    if(k===0)return x.st==='locked'?`Locked ${g.b} ${x.dir} door`:`${cap(g.b)} ${x.dir} door was locked but not fully closed`;
+    return x.st==='locked'?`locked the ${x.dir} door`:`${x.dir} door was locked but not fully closed`;
+  });
+  return listWords(clauses)+'.';
+}
+function combineDoors(list){
+  const out=[];let g=null;
+  list.forEach(e=>{
+    const info=doorInfo(e);
+    if(info&&g&&g.b===info.b&&g.round===info.round){
+      const k=g.seq.findIndex(x=>x.dir===info.dir);
+      if(k>=0)g.seq[k]={dir:info.dir,st:info.st};else g.seq.push({dir:info.dir,st:info.st});
+      g.item.text=groupText(g);return;
+    }
+    if(info){
+      g={b:info.b,round:info.round,seq:[{dir:info.dir,st:info.st}]};
+      g.item={t:e.t,text:groupText(g)};out.push(g.item);return;
+    }
+    g=null;out.push({t:e.t,text:e.text});
+  });
+  return out;
+}
+function reportRows(){
+  const rows=[];
+  const H=S.shift.hdr||{};
+  if(H.recv&&H.recv.trim())rows.push({t:(H.from||'').trim()||(S.shift.log.length?slot(Math.min(...S.shift.log.map(e=>e.ts))):slot(S.shift.started)),text:`Received all equipment from Officer ${H.recv.trim()} in proper working order.`,own:1});
+  combineDoors(sortedLog()).forEach(e=>{
+    const last=rows[rows.length-1];
+    if(last&&!last.own&&last.t===e.t)last.text+='  '+e.text;else rows.push({t:e.t,text:e.text});
+  });
+  return rows.map(r=>({t:r.t,text:r.text}));
+}
+async function copy(txt,msg){
+  try{await navigator.clipboard.writeText(txt);toast(msg)}
+  catch(e){const ta=document.getElementById('repText');ta.focus();ta.select();toast('Select all and copy manually')}
+}
+function repLines(){return currentReportText().split('\n').filter(l=>l.trim())}
+/* The report's last box: "Passed down all equipment to Officer ___ in proper working order." */
+function finalRow(){const H=hdr();return{t:(H.to||'').trim(),text:`Passed down all equipment to Officer ${(H.passTo||'').trim()||'________'} in proper working order.`}}
+const autoText=()=>[...reportRows(),finalRow()].map(r=>r.t+'\t'+r.text).join('\n');
+function currentReportText(){return autoText()}
+function renderReportText(){document.getElementById('repText').value=autoText()}
+if(S.shift&&S.shift.repEdit){delete S.shift.repEdit;save()}
+document.getElementById('copyAll').onclick=()=>copy(repLines().map(l=>{const k=l.indexOf('\t');return k<0?l:l.slice(0,k)+'  '+l.slice(k+1)}).join('\n'),'Report copied with times');
+document.getElementById('newShift').onclick=()=>confirmBox('Start a new shift?<br><span class="small">This clears tonight\'s door marks, entries and checklist. Download or copy your report first.</span>','Start new shift',()=>{S.shift=newShiftObj();S.tab='rounds';save();render();toast('New shift started')});
+
+/* ---------- route ---------- */
+const move=(a,from,to)=>{const [x]=a.splice(from,1);a.splice(to,0,x)};
+const btnRow=(btns)=>`<div class="row" style="margin-top:12px">${btns}</div>`;
+
+/* route profiles */
+document.getElementById('routeSel').onchange=e=>{S.active=+e.target.value;routeChanged();toast('Using '+R().name)};
+function nameSheet(title,val,onOk){
+  openSheet(`<h2>${title}</h2><label>Route name</label><input id="fName" value="${esc(val)}" placeholder="Route name">
+  ${btnRow('<button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Save</button>')}`,()=>{
+    const f=document.getElementById('fName');f.focus();f.select();
+    document.getElementById('fCancel').onclick=closeSheet;
+    document.getElementById('fSave').onclick=()=>{const v=f.value.trim();if(!v)return;onOk(v);closeSheet()};
+  });
+}
+document.getElementById('rNew').onclick=()=>nameSheet('New copy of "'+esc(R().name)+'"',R().name+' (copy)',v=>{
+  S.routes.push({name:v,stops:JSON.parse(JSON.stringify(R().stops))});S.active=S.routes.length-1;routeChanged();toast('Created '+v)});
+document.getElementById('rRename').onclick=()=>nameSheet('Rename route',R().name,v=>{R().name=v;save();render()});
+document.getElementById('rDelete').onclick=()=>{
+  if(S.routes.length<2){toast("Can't delete the only route");return}
+  confirmBox('Delete the route "'+esc(R().name)+'"?<br><span class="small">This can\'t be undone.</span>','Delete',()=>{const n=R().name;S.routes.splice(S.active,1);S.active=0;routeChanged();toast('Deleted '+n)});
+};
+
+/* stop list: arrows, tap to edit, drag */
+const stopList=document.getElementById('stopList');
+let drag=null;
+function renderStops(){
+  const st=R().stops;
+  stopList.innerHTML=st.length?st.map((s,i)=>`<li data-i="${i}" class="${drag===i?'drag':''}">
+    <span class="h">☰</span><span class="num">${i+1}</span>
+    <span class="grow ed" data-edit="${i}">${esc(s.b)}<br><small>${s.doors.length?s.doors.map(esc).join(', '):'single stop'}</small></span>
+    <button class="arr" data-up="${i}" ${i?'':'disabled style="opacity:.3"'}>▲</button>
+    <button class="arr" data-dn="${i}" ${i<st.length-1?'':'disabled style="opacity:.3"'}>▼</button></li>`).join('')
+    :'<li class="small">No stops yet. Tap "+ Add stop".</li>';
+}
+stopList.addEventListener('click',e=>{
+  const t=e.target.closest('[data-up],[data-dn],[data-edit]');if(!t)return;
+  const st=R().stops;
+  if(t.dataset.up){const i=+t.dataset.up;move(st,i,i-1);routeChanged()}
+  else if(t.dataset.dn){const i=+t.dataset.dn;move(st,i,i+1);routeChanged()}
+  else editStop(+t.dataset.edit);
+});
+stopList.addEventListener('pointerdown',e=>{
+  const h=e.target.closest('.h');if(!h)return;
+  e.preventDefault();drag=+h.parentElement.dataset.i;renderStops();
+});
+window.addEventListener('pointermove',e=>{
+  if(drag===null)return;e.preventDefault();
+  if(e.clientY<70)window.scrollBy(0,-12);else if(e.clientY>window.innerHeight-70)window.scrollBy(0,12);
+  const lis=[...stopList.children];let to=lis.length-1;
+  for(let k=0;k<lis.length;k++){const r=lis[k].getBoundingClientRect();if(e.clientY<r.top+r.height/2){to=k;break}}
+  if(to!==drag){move(R().stops,drag,to);drag=to;renderStops()}
+},{passive:false});
+const endDrag=()=>{if(drag===null)return;drag=null;routeChanged()};
+window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
+
+/* edit one stop */
+function editStop(i){
+  const isNew=i<0;
+  const work=isNew?{b:'',doors:[]}:JSON.parse(JSON.stringify(R().stops[i]));
+  const draw=()=>{
+    document.getElementById('fDoors').innerHTML=work.doors.length?work.doors.map((d,k)=>`<li><span class="grow">${esc(d)}</span>
+      <button class="arr" data-du="${k}" ${k?'':'disabled style="opacity:.3"'}>▲</button>
+      <button class="arr" data-dd="${k}" ${k<work.doors.length-1?'':'disabled style="opacity:.3"'}>▼</button>
+      <button class="x" data-dx="${k}">✕</button></li>`).join(''):'<li class="small">No doors: this is a single stop (like a reading room).</li>';
+  };
+  openSheet(`<h2>${isNew?'Add stop':'Edit stop'}</h2>
+    <label>Building / stop name</label><input id="fB" value="${esc(work.b)}" placeholder="Building or stop name">
+    <label>Doors, in the order you check them</label><ul class="list dl" id="fDoors"></ul>
+    <label>Add a door</label>
+    <div class="chips" id="fDirs">${['N','S','E','W','NE','NW','SE','SW'].map(d=>`<button data-add="${d}">${d}</button>`).join('')}</div>
+    <div class="row" style="margin-top:8px"><input id="fCustom" placeholder="Other label" style="flex:3"><button class="sec" id="fAddC">Add</button></div>
+    <label>Position in route</label><input id="fPos" inputmode="numeric" value="${isNew?R().stops.length+1:i+1}">
+    ${btnRow((isNew?'':'<button class="sec" style="background:var(--bad)" id="fDel">Delete stop</button>')+'<button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Save</button>')}`,()=>{
+    draw();
+    document.getElementById('fDirs').onclick=e=>{const b=e.target.closest('[data-add]');if(b){work.doors.push(b.dataset.add);draw()}};
+    document.getElementById('fAddC').onclick=()=>{const c=document.getElementById('fCustom');const v=c.value.trim();if(v){work.doors.push(v);c.value='';draw()}};
+    document.getElementById('fDoors').onclick=e=>{
+      const t=e.target.closest('[data-du],[data-dd],[data-dx]');if(!t)return;
+      if(t.dataset.du){const k=+t.dataset.du;move(work.doors,k,k-1)}
+      else if(t.dataset.dd){const k=+t.dataset.dd;move(work.doors,k,k+1)}
+      else{const k=+t.dataset.dx;confirmBox('Remove the door "'+esc(work.doors[k])+'" from this stop?','Remove',()=>{work.doors.splice(k,1);draw()});return}
+      draw();
+    };
+    document.getElementById('fCancel').onclick=closeSheet;
+    if(!isNew)document.getElementById('fDel').onclick=()=>confirmBox('Delete the stop "'+esc(work.b||R().stops[i].b)+'" and its doors from this route?','Delete',()=>{R().stops.splice(i,1);closeSheet();routeChanged();toast('Stop deleted')});
+    document.getElementById('fSave').onclick=()=>{
+      work.b=document.getElementById('fB').value.trim();if(!work.b){document.getElementById('fB').focus();return}
+      const st=R().stops;if(isNew)st.push(work);else st[i]=work;
+      const from=isNew?st.length-1:i;
+      let to=parseInt(document.getElementById('fPos').value,10);to=isNaN(to)?from:Math.max(0,Math.min(st.length-1,to-1));
+      move(st,from,to);closeSheet();routeChanged();toast(isNew?'Stop added':'Stop saved');
+    };
+  });
+}
+document.getElementById('addStop').onclick=()=>editStop(-1);
+document.getElementById('reverseR').onclick=()=>{R().stops.reverse();routeChanged();toast('Route reversed')};
+
+/* text editing and sharing */
+const FMT_HELP='<p class="small" style="margin:0 0 8px">One stop per line, in walking order. Doors go after a colon, like <b>Building A: S, W, N</b>. A line with no colon is a single stop, like <b>Main Office</b>.</p>';
+document.getElementById('textEdit').onclick=()=>openSheet(`<h2>Edit "${esc(R().name)}" as text</h2>${FMT_HELP}
+  <textarea id="fTxt" rows="14" spellcheck="false">${esc(stopsToText(R().stops))}</textarea>
+  ${btnRow('<button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Save</button>')}`,()=>{
+  document.getElementById('fCancel').onclick=closeSheet;
+  document.getElementById('fSave').onclick=()=>{R().stops=textToStops(document.getElementById('fTxt').value);closeSheet();routeChanged();toast('Route saved')};
+});
+document.getElementById('rCopy').onclick=async()=>{
+  const txt='# Route: '+R().name+'\n'+stopsToText(R().stops);
+  try{await navigator.clipboard.writeText(txt);toast('Route copied')}
+  catch(e){openSheet(`<h2>Copy this text</h2><textarea rows="14" readonly>${esc(txt)}</textarea>${btnRow('<button class="sec" id="fCancel">Done</button>')}`,()=>{document.getElementById('fCancel').onclick=closeSheet})}
+};
+document.getElementById('rPaste').onclick=()=>openSheet(`<h2>Paste a route</h2>${FMT_HELP}
+  <label>Route name</label><input id="fName" placeholder="Route name">
+  <label>Route text</label><textarea id="fTxt" rows="12" spellcheck="false"></textarea>
+  ${btnRow('<button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Add route</button>')}`,()=>{
+  const ta=document.getElementById('fTxt'),nm=document.getElementById('fName');
+  ta.oninput=()=>{const m=ta.value.match(/^#\s*Route:\s*(.+)$/m);if(m&&!nm.value)nm.value=m[1].trim()};
+  document.getElementById('fCancel').onclick=closeSheet;
+  document.getElementById('fSave').onclick=()=>{
+    const stops=textToStops(ta.value);if(!stops.length){ta.focus();return}
+    S.routes.push({name:nm.value.trim()||'Pasted route',stops});S.active=S.routes.length-1;closeSheet();routeChanged();toast('Route added');
+  };
+});
+document.getElementById('saveFrz').onclick=()=>{
+  S.freezers=document.getElementById('frzText').value.split('\n').map(x=>x.trim()).filter(Boolean);save();toast('Freezers saved');
+};
+
+/* ---------- render ---------- */
+const STATE_TXT={secure:['Locked','s-secure'],locked:['Unlocked','s-locked'],open:['Not Latched','s-open']};
+function render(){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===S.tab));
+  ['rounds','log','report','route'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hide',t!==S.tab));
+  const sh=S.shift,n=DOORS.length;
+  const done=DOORS.filter(d=>sh.marks[d.id]).length;
+  if(n){
+    const x=DOORS[sh.idx];
+    document.getElementById('progTxt').textContent=`Round ${sh.round} · Door ${sh.idx+1} of ${n}`;
+    document.getElementById('doneTxt').textContent=`${done} checked`;
+    document.getElementById('progBar').style.width=(done/n*100)+'%';
+    document.getElementById('curB').textContent=x.b;
+    document.getElementById('curD').textContent=doorLabel(x);
+    const st=sh.marks[x.id],el=document.getElementById('curS');
+    if(st){el.textContent='Marked: '+STATE_TXT[st][0];el.className='state '+STATE_TXT[st][1]}else{el.textContent='Not checked yet';el.className='state'}
+  }else{
+    document.getElementById('progTxt').textContent='No doors yet';
+    document.getElementById('curB').textContent='Add your route';
+    document.getElementById('curD').textContent='Open the Route tab';
+  }
+  const up=document.getElementById('upNext');
+  up.innerHTML=DOORS.slice(sh.idx+1,sh.idx+5).map((d,k)=>`<li data-i="${sh.idx+1+k}"><span class="grow">${esc(d.b)}${d.d?' · '+esc(doorLabel(d)):''}</span>${sh.marks[d.id]?`<span class="tag ${STATE_TXT[sh.marks[d.id]][1]}">${STATE_TXT[sh.marks[d.id]][0]}</span>`:''}</li>`).join('')||'<li class="small">End of route</li>';
+  up.querySelectorAll('li[data-i]').forEach(li=>li.onclick=()=>{sh.idx=+li.dataset.i;save();render()});
+  fitUpNext();
+  document.getElementById('jump').innerHTML=DOORS.map((d,i)=>`<option value="${i}" ${i===sh.idx?'selected':''}>${i+1}. ${esc(d.b)}${d.d?' · '+esc(doorLabel(d)):''}${sh.marks[d.id]?' ✓':''}</option>`).join('');
+
+  const L=sortedLog(),ll=document.getElementById('logList');
+  ll.innerHTML=L.length?L.map(e=>`<li data-i="${e.i}"><span class="t">${e.t}</span><span class="grow">${esc(e.text)}</span><span class="x">›</span></li>`).join(''):'<li class="small">Nothing logged yet.</li>';
+  ll.querySelectorAll('li[data-i]').forEach(li=>li.onclick=()=>editEntry(+li.dataset.i));
+
+  showSync();
+  if(S.tab==='report')renderHeader();
+  if(S.tab==='report')renderReportText();
+  renderHist();
+  const opens=sh.hist.filter(h=>h.st==='open').sort((a,b)=>a.ts-b.ts).map(h=>({b:h.b,d:h.d,_l:` (round ${h.round}, ${hhmm(h.ts)})`}));
+  document.getElementById('openList').innerHTML=opens.length?opens.map(d=>`<li><span>${esc(cap(doorName(d)))}<span class="small">${d._l}</span></span></li>`).join(''):'<li class="small">None so far.</li>';
+
+  if(S.tab==='route'){
+    document.getElementById('routeSel').innerHTML=S.routes.map((r,i)=>`<option value="${i}" ${i===S.active?'selected':''}>${esc(r.name)}</option>`).join('');
+    renderStops();
+    if(document.activeElement!==document.getElementById('frzText'))document.getElementById('frzText').value=S.freezers.join('\n');
+    document.getElementById('routeCount').textContent=n+' doors in '+new Set(DOORS.map(d=>d.b)).size+' stops';
+  }
+}
+/* ---------- shift details + checklist ---------- */
+const CHECKS=['New Instructions Received','Fire Doors, Exits Blocked','Fire Extinguishers Unserviceable','Electrical Outlets Overloaded','Security, Exit Lights Out','Smoking Violations','Other Fire Hazards','Slippery Floors, Surfaces','First Aid Equipment Needed','Protective Equipment Needed','Other Safety Hazards','Equipment Left On','Defective Equipment','Parking Violations','Property Damaged','Windows, Doors Unlocked','Suspicious Activities'];
+function fmtDate(ts){const d=new Date(ts);return String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getFullYear()).slice(2)}
+function hdr(){
+  const sh=S.shift;
+  if(!sh.hdr)sh.hdr={date:'',from:'',to:'',recv:'',start:'',end:''};
+  if(!S.v2){S.v2=1;if(sh.hdr.from==='1600'&&sh.hdr.to==='0000'){sh.hdr.from='';sh.hdr.to=''}sh.hdr.date='';delete S.defFrom;delete S.defTo}
+  if(!sh.checks)sh.checks={};
+  return sh.hdr;
+}
+/* Date fills in automatically from the day the shift's first entry was logged (today if nothing yet), unless typed in. */
+function autoDate(){const L=S.shift.log;return fmtDate(L.length?Math.min(...L.map(e=>e.ts)):Date.now())}
+function shiftDate(){const v=(hdr().date||'').trim();return v||autoDate()}
+function totalMiles(H){const a=parseFloat(H.start),b=parseFloat(H.end);return(!isNaN(a)&&!isNaN(b)&&b>=a)?(Math.round((b-a)*10)/10)+'mi':''}
+const withMi=v=>{v=(v||'').trim();return v&&/^[\d.]+$/.test(v)?v+'mi':v};
+[['hDate','date'],['hFrom','from'],['hTo','to'],['hStart','start'],['hEnd','end']].forEach(([id,k])=>{
+  document.getElementById(id).addEventListener('input',e=>{
+    const v=e.target.value;
+    hdr()[k]=v;
+    save();
+    document.getElementById('hTotal').textContent=totalMiles(hdr())?'Total miles driven: '+totalMiles(hdr()):'';
+    if(k==='recv'||k==='from')renderReportText();
+  });
+});
+if(!S.officers){S.officers=S.officer?[S.officer]:[];delete S.officer}
+function renderOfficerSel(){
+  [['hOfficer','officer'],['hRecv','recv'],['hPass','passTo']].forEach(([id,k])=>{
+    const sel=document.getElementById(id),cur=hdr()[k]||'';
+    const names=S.officers.slice();if(cur&&!names.includes(cur))names.push(cur);
+    sel.innerHTML='<option value="">— Select officer —</option>'+names.map(n=>`<option ${n===cur?'selected':''}>${esc(n)}</option>`).join('')+'<option value="__add">+ Add a name…</option>';
+    sel.value=cur;
+  });
+}
+function addOfficerSheet(after){
+  openSheet(`<h2>Add an officer</h2><label>Name as it should appear on the report</label><input id="fName" placeholder="Officer name">
+  ${btnRow('<button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Add</button>')}`,()=>{
+    const f=document.getElementById('fName');f.focus();
+    document.getElementById('fCancel').onclick=()=>{closeSheet();after&&after(null)};
+    document.getElementById('fSave').onclick=()=>{const v=f.value.trim();if(!v)return;if(!S.officers.includes(v))S.officers.push(v);save();closeSheet();after&&after(v)};
+  });
+}
+[['hOfficer','officer'],['hRecv','recv'],['hPass','passTo']].forEach(([id,k])=>{
+  document.getElementById(id).onchange=e=>{
+    const v=e.target.value;
+    if(v==='__add'){addOfficerSheet(n=>{if(n)hdr()[k]=n;save();renderOfficerSel()});return}
+    hdr()[k]=v;save();if(k!=='officer')renderReportText();
+  };
+});
+function manageOfficers(){
+  openSheet(`<h2>Officer names</h2><ul class="list dl" id="fOff"></ul>
+  ${btnRow('<button class="sec" id="fAdd">+ Add a name</button><button class="sec" style="background:var(--acc)" id="fCancel">Done</button>')}`,()=>{
+    const draw=()=>{document.getElementById('fOff').innerHTML=S.officers.length?S.officers.map((n,k)=>`<li><span class="grow">${esc(n)}</span><button class="x" data-rm="${k}">✕</button></li>`).join(''):'<li class="small">No names yet.</li>'};
+    draw();
+    document.getElementById('fOff').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const k=+b.dataset.rm;
+      confirmBox('Remove "'+esc(S.officers[k])+'" from the list of names?','Remove',()=>{S.officers.splice(k,1);save();draw();renderOfficerSel()})};
+    document.getElementById('fAdd').onclick=()=>addOfficerSheet(()=>{manageOfficers();renderOfficerSel()});
+    document.getElementById('fCancel').onclick=closeSheet;
+  });
+}
+document.getElementById('mgOfficers').onclick=manageOfficers;
+function renderHeader(){
+  const H=hdr();
+  const set=(id,v)=>{const el=document.getElementById(id);if(document.activeElement!==el)el.value=v||''};
+  renderOfficerSel();set('hDate',H.date);document.getElementById('hDate').placeholder=autoDate()+' (automatic)';set('hFrom',H.from);set('hTo',H.to);set('hStart',H.start);set('hEnd',H.end);
+  document.getElementById('hTotal').textContent=totalMiles(H)?'Total miles driven: '+totalMiles(H):'';
+  const ck=S.shift.checks;
+  document.getElementById('chkList').innerHTML=CHECKS.map((c,i)=>`<li data-c="${i}"><span class="num">${i+1}</span><span class="grow">${c}</span><span class="yn ${ck[i]?'yes':''}">${ck[i]?'YES':'No'}</span></li>`).join('');
+}
+document.getElementById('chkList').onclick=e=>{const li=e.target.closest('[data-c]');if(!li)return;const ck=S.shift.checks,i=li.dataset.c;if(ck[i])delete ck[i];else ck[i]=true;save();renderHeader()};
+
+/* ---------- .docx builder (no network needed) ---------- */
+const LOGO_B64='iVBORw0KGgoAAAANSUhEUgAAAUEAAAEUAQAAAACdNrnYAAAEBElEQVR42u1aMXLbMBA83HASFi5YuuRT8JT8JPAP8gQ9haVLPYFFCpccjwo6IxEpJJIAgQNWNDkex2HjGWu1hzvc3h0hKEvY88SEPp8IaTXM2W5vffhQ388dinw+ocjmYkCkgdcJIsna9rsFHsNEjyVqvcAjX/1r6vjSyO6Te3SpUeSpW1aGXkAeYesaRVrqQeQf2PeXEHmOIw/+BzKnNX61ZnSZCeQLkcWQLcypI8hom7nAuXSCkUciv1yLyAblvPaTBkCeYHV0QUwZjLuIvM0RnY/sgfS4cUbGsB7W+xFG6pA6jrzA1WaM+zmL7GDOsXQNPrILZoELXBXPMLKfS1MG+QvltEZELpQwwHXeyXeTRh5hzlt6fPPXxbGqfX1KXyQcimbMdxVYX4rrGe5x2nG8SyGnHaxy/WiAO+xvGHlw07lPIU2Q+QLy4sXgnEA6y6zSnK0UiGIp2jmI5i3JeRG2IUS6VbtIcs5ZrDKRb9B5yZElLz5bIF/lHWO/oHpiU95qWFxmkVznonoYd8s41Vx0wHmOjUhl0vohUcdZXGaV4hyEcj+9RWbFFnK2C8LK3RR2rWqUM2gupSs5FmcPTVS4TnK2FseQjZBvATL6ym1jyMyIxFKrVom38gP6hhLpgcp1jJODfjBV2sigP0a/CTnbzIDH0gRdiB69hdkhIPvUjHNFWnlE8v7PYzbUC0S1VB2nRiRvsZwakbz1c8ohL1QszXz10hjfsr2F33YbaR4YlkiTVZn4hmKEbwnnpcr5hNGDPdG6Eua6dnj36YGeaTmz7XOkWdh2hq0X0+63PrJb71EZtJq7T05ambpbydkF6VkF8shz9ms9MoLgeN7oezmtNICrWXL3cr6KgjM7nJjpyQdOCm638zqDIetJcgyb4riAi3ASy1kvJz0wZZvG5lEqJsm9m7O63/p8WnOP9XRjV5PkGMyP3LkN4JEJ5+ysdb1LztsUUkXixUAzMJj1Kr1OXuNROYqTs9NPmrNcY70YxbnhHvEoufdyVpGNZSIi1QBdjtHySUxtBF5HDvoYldEVWSDy4OjmmcjxSd6jep3iqhqQHGc7XOVy1rB1nZGHEa3L/zQpGRX3RKkZkQoRHMA5nlGy1FSinGledZMcx5KukjjLTaaLWXLRX6vrlXVeJ5Ba4qzTPtVXGXOMwsQ5m3xPGEZOs93vsPaGVMv9VNEc5Aiz2KOYSHlLfQi0Yubv/3QvOXS08j4DT39KTHIMX9DgvIjUiqpYbzQzTLnGmUo3iwXhfKSGiJRVFrxnZfe4J6B24GQY+bCD9Wp7TtX+vxvzQUiFPJoIVEcLW++IeNjYo36HKJ1h5PChu2k/S9aZHTgbGNnu4zvvwKmw/v6D1Be+S/wX6GIcoA/IkFcAAAAASUVORK5CYII=';
+const X=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function run(t,o={}){
+  const pr=(o.b?'<w:b/>':'')+(o.color?`<w:color w:val="${o.color}"/>`:'')+(o.sz?`<w:sz w:val="${o.sz*2}"/><w:szCs w:val="${o.sz*2}"/>`:'')+(o.u?'<w:u w:val="single"/>':'');
+  return String(t).split('\t').map((part,k)=>(k?`<w:r>${pr?'<w:rPr>'+pr+'</w:rPr>':''}<w:tab/></w:r>`:'')+(part?`<w:r>${pr?'<w:rPr>'+pr+'</w:rPr>':''}<w:t xml:space="preserve">${X(part)}</w:t></w:r>`:'')).join('');
+}
+function par(runs,o={}){
+  const ppr=(o.tabs?`<w:tabs>${o.tabs.map(t=>`<w:tab w:val="left" w:pos="${t}"/>`).join('')}</w:tabs>`:'')+`<w:spacing w:before="${o.before||0}" w:after="${o.after||0}"/>`+(o.jc?`<w:jc w:val="${o.jc}"/>`:'');
+  return `<w:p><w:pPr>${ppr}</w:pPr>${runs||''}</w:p>`;
+}
+const BORDER=v=>['top','left','bottom','right','insideH','insideV'].map(s=>`<w:${s} w:val="${v?'single':'nil'}" w:sz="4" w:space="0" w:color="000000"/>`).join('');
+function cell(w,content,o={}){
+  return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${o.span?`<w:gridSpan w:val="${o.span}"/>`:''}${o.fill?`<w:shd w:val="clear" w:color="auto" w:fill="${o.fill}"/>`:''}${o.mar?`<w:tcMar><w:left w:w="${o.mar}" w:type="dxa"/><w:right w:w="${o.mar}" w:type="dxa"/></w:tcMar>`:''}<w:vAlign w:val="${o.v||'top'}"/></w:tcPr>${content}${/<\/w:p>$/.test(content)?'':par('')}</w:tc>`;
+}
+function table(widths,rows,o={}){
+  const tw=widths.reduce((a,b)=>a+b,0);
+  return `<w:tbl><w:tblPr><w:tblW w:w="${tw}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${BORDER(o.borders)}</w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="${o.cm==null?60:o.cm}" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="${o.cm==null?60:o.cm}" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>`+
+    rows.map(r=>`<w:tr><w:trPr>${r.h?`<w:trHeight w:val="${r.h}" w:hRule="atLeast"/>`:''}<w:cantSplit/></w:trPr>${r.cells.join('')}</w:tr>`).join('')+'</w:tbl>';
+}
+function logoXml(){
+  const cx=640000,cy=Math.round(530000*276/321);
+  return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="1" name="Logo"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="logo.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdLogo"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+}
+function reportFromTextarea(){
+  return reportRows();
+  const lines=repLines();
+  return lines.map(l=>{const k=l.indexOf('\t');if(k>=0)return{t:l.slice(0,k).trim(),text:l.slice(k+1).trim()};const m=l.match(/^(\d{4})\s+(.*)$/);return m?{t:m[1],text:m[2]}:{t:'',text:l.trim()}});
+}
+/* ---------- page layout shared by the .docx and the preview ----------
+   Rows are never shrunk: when page 1 is full, they continue on page 2, 3, ...
+   Heights are in twips (1/1440 inch) and estimated generously so Word's real layout fits. */
+const ROW_MIN=440, P1_CAP=11440, PN_CAP=12320;
+function rowH(text,cpl){const lines=Math.max(1,Math.ceil((text||'').length/cpl));return Math.max(ROW_MIN,60+lines*235)}
+/* "Continued." goes in the bottom box of pages that run over;
+   the passed-down line goes right after the last entry. */
+function paginate(rows){
+  const fin=finalRow();
+  const pages=[{rows:[],used:0,cap:P1_CAP,cpl:64}];
+  const room=p=>p.cap-ROW_MIN;
+  rows.forEach(r=>{
+    let p=pages[pages.length-1],h=rowH(r.text,p.cpl);
+    if(p.used+h>room(p)&&p.rows.length){p={rows:[],used:0,cap:PN_CAP,cpl:92};pages.push(p);h=rowH(r.text,p.cpl)}
+    p.rows.push({...r,h});p.used+=h;
+  });
+  // the closing line needs room on the last page; if it won't fit, it starts a new page
+  const lp=pages[pages.length-1],fh=rowH(fin.text,lp.cpl);
+  if(fh>ROW_MIN&&lp.used+fh>lp.cap){pages.push({rows:[],used:0,cap:PN_CAP,cpl:92})}
+  pages.forEach((p,k)=>{
+    const last=k===pages.length-1,end=last?{...fin,h:rowH(fin.text,p.cpl)}:{t:'',text:'Continued.',h:ROW_MIN};
+    const blanks=Math.floor((p.cap-p.used-end.h)/ROW_MIN);
+    // last page: the passed-down line follows the last entry; other pages: "Continued." in the bottom box
+    if(last)p.rows.push(end);
+    for(let b=0;b<blanks;b++)p.rows.push({t:'',text:'',h:ROW_MIN});
+    if(!last)p.rows.push(end);
+  });
+  return pages;
+}
+const DOC_NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+function actTable(widths,rows){
+  return table(widths,rows.map(r=>({h:ROW_MIN,cells:[
+    cell(widths[0],par(r.t?run(r.t,{sz:16}):'',{jc:'center'}),{v:'top'}),
+    cell(widths[1],par(r.text?run(r.text,{sz:10}):''),{v:'top'})]})),{borders:true,cm:80});
+}
+function documentXml(){
+  const H=hdr(),ck=S.shift.checks,pages=paginate(reportFromTextarea()),N=pages.length;
+  const LW=2620,RW=8180,FW=10800;
+  const brand=table([1000,LW-1000],[{cells:[cell(1000,par(logoXml())),cell(LW-1000,par(run('CONCORDIA',{b:1,sz:9}),{jc:'center'})+par(run('THEOLOGICAL',{b:1,sz:9}),{jc:'center'})+par(run('SEMINARY',{b:1,sz:9}),{jc:'center'}),{v:'center'})]}],{cm:0});
+  const banner=(w,txt)=>table([w],[{h:520,cells:[cell(w,par(run(txt,{b:1,sz:18,color:'FFFFFF'}),{jc:'center'}),{fill:'000000',v:'center'})]}],{cm:60});
+  const fields=
+    par(run('DATE:  ',{b:1})+run(shiftDate())+run('\t')+run('SHIFT-FROM:  ',{b:1})+run(H.from)+run('\t')+run('TO:  ',{b:1})+run(H.to),{before:160,tabs:[2300,4600]})+
+    par(run('Vehicle Starting Mileage:  ',{b:1,sz:8})+run(withMi(H.start)+'      ',{sz:8})+run('Ending Mileage:  ',{b:1,sz:8})+run(withMi(H.end)+'      ',{sz:8})+run('Total Miles Driven:  ',{b:1,sz:8})+run(totalMiles(H),{sz:8}),{before:240})+
+    par(run('SUBMITTED BY:  ',{b:1})+run(H.officer||''),{before:240});
+  const CW=[360,520,520,1220];
+  const chk=table(CW,[
+    {h:560,cells:[cell(2620,par(run('No. 1 through 17 must be checked (✓) Yes or No. Items checked Yes must be explained.',{sz:7.5})),{span:4,v:'center',mar:100})]},
+    {h:360,cells:[cell(CW[0],par('')),cell(CW[1],par(run('Yes',{sz:7.5}),{jc:'center'}),{v:'center'}),cell(CW[2],par(run('No',{sz:7.5}),{jc:'center'}),{v:'center'}),cell(CW[3],par(run('Were There Any',{sz:7.5}),{jc:'center'}),{v:'center'})]},
+    ...CHECKS.map((c,i)=>({h:600,cells:[
+      cell(CW[0],par(run(i+1,{sz:7}),{jc:'center'}),{v:'center'}),
+      cell(CW[1],par(ck[i]?run('X',{sz:12}):'',{jc:'center'}),{v:'center'}),
+      cell(CW[2],par(ck[i]?'':run('X',{sz:12}),{jc:'center'}),{v:'center'}),
+      cell(CW[3],par(run(c,{sz:7})),{v:'center'})]}))
+  ],{borders:true,cm:50});
+  const outer=table([LW,RW],[
+    {cells:[cell(LW,brand,{v:'top'}),cell(RW,banner(RW,"OFFICER'S DAILY ACTIVITY REPORT")+fields)]},
+    {cells:[cell(LW,par('')+chk),cell(RW,par('')+actTable([1250,RW-1250],pages[0].rows))]}
+  ],{cm:0});
+  let body=outer+par(run('Keys and equipment received in good order by:')+run('\t')+run("Director's Approval:________________________"),{before:360,tabs:[6000]});
+  if(N>1)body+=par(run(`Page 1 of ${N}`,{sz:8}),{before:120,jc:'right'});
+  pages.slice(1).forEach((p,k)=>{
+    body+=`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:br w:type="page"/></w:r></w:p>`;
+    body+=banner(FW,"OFFICER'S DAILY ACTIVITY REPORT (CONTINUED)");
+    body+=par(run('DATE:  ',{b:1})+run(shiftDate())+run('\t')+run('SUBMITTED BY:  ',{b:1})+run(H.officer||'')+run('\t')+run(`Page ${k+2} of ${N}`,{sz:8}),{before:160,after:160,tabs:[2600,9200]});
+    body+=actTable([1250,FW-1250],p.rows);
+  });
+  // signature block at the very end of the report
+  body+=par(run('Officer Signature:  ',{b:1})+run('________________________________')+run('\t')+run('Date:  ',{b:1})+run('____________________'),{before:N>1?280:320,tabs:[7000]});
+  body+=`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr></w:p>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document ${DOC_NS}><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="620" w:right="720" w:bottom="620" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+}
+const STYLES=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
+const CT=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+const RELS=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+const DOCRELS=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/></Relationships>`;
+
+/* minimal ZIP writer (stored, no compression) */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function zip(files){
+  const enc=new TextEncoder(),parts=[],central=[];let off=0;
+  files.forEach(f=>{
+    const name=enc.encode(f.name),data=typeof f.data==='string'?enc.encode(f.data):f.data,crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,0,true);h.setUint16(12,0x21,true);
+    h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer),name,data);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,0,true);c.setUint16(14,0x21,true);
+    c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer),name);
+    off+=30+name.length+data.length;
+  });
+  const csz=central.reduce((a,b)=>a+b.length,0);
+  const e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,csz,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...central,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+function buildDocx(){
+  const logo=Uint8Array.from(atob(LOGO_B64),c=>c.charCodeAt(0));
+  return zip([{name:'[Content_Types].xml',data:CT},{name:'_rels/.rels',data:RELS},{name:'word/document.xml',data:documentXml()},{name:'word/styles.xml',data:STYLES},{name:'word/_rels/document.xml.rels',data:DOCRELS},{name:'word/media/logo.png',data:logo}]);
+}
+
+function docxName(){const d=shiftDate().replace(/\//g,'.');return d+' Activity Report.docx'}
+/* Share via the iPhone share sheet (Mail, Files, AirDrop…); falls back to a normal download. */
+async function shareOrSave(data,filename,mime){
+  const blob=data instanceof Blob?data:new Blob([data],{type:mime});
+  try{
+    const file=new File([blob],filename,{type:mime});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file]});return 'shared';
+    }
+  }catch(e){if(e&&e.name==='AbortError')return 'cancelled'}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},5000);
+  return 'downloaded';
+}
+const DOCX_MIME='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+document.getElementById('dlDocx').onclick=async()=>{
+  try{const r=await shareOrSave(buildDocx(),docxName(),DOCX_MIME);if(r==='downloaded')toast('Report downloaded')}
+  catch(e){toast("Couldn't create the file")}
+};
+
+/* ---------- preview ---------- */
+let pvZoomed=false;
+function previewPages(){
+  const H=hdr(),ck=S.shift.checks,pages=paginate(reportFromTextarea()),N=pages.length,E=esc;
+  const act=(rows,w1,w2)=>`<table class="bx act" style="width:${w1+w2}px"><colgroup><col style="width:${w1}px"><col></colgroup>${rows.map(r=>`<tr><td class="tm">${E(r.t)}</td><td>${E(r.text)}</td></tr>`).join('')}</table>`;
+  const p1=`<table style="width:720px"><colgroup><col style="width:175px"><col style="width:545px"></colgroup>
+  <tr><td><div class="brand"><img src="data:image/png;base64,${LOGO_B64}" alt=""><div>CONCORDIA<br>THEOLOGICAL<br>SEMINARY</div></div></td>
+  <td><div class="banner">OFFICER'S DAILY ACTIVITY REPORT</div>
+    <div class="f"><span style="width:153px"><b>DATE:</b>&nbsp; ${E(shiftDate())}</span><span style="width:153px"><b>SHIFT-FROM:</b>&nbsp; ${E(H.from||'')}</span><span><b>TO:</b>&nbsp; ${E(H.to||'')}</span></div>
+    <div class="f" style="margin-top:16px;font-size:10.7px;white-space:nowrap;gap:16px"><span><b>Vehicle Starting Mileage:</b>&nbsp; ${E(withMi(H.start))}</span><span><b>Ending Mileage:</b>&nbsp; ${E(withMi(H.end))}</span><span><b>Total Miles Driven:</b>&nbsp; ${E(totalMiles(H))}</span></div>
+    <div class="f" style="margin-top:16px;margin-bottom:4px"><span><b>SUBMITTED BY:</b>&nbsp; ${E(H.officer||'')}</span></div></td></tr>
+  <tr><td>
+    <table class="bx chk" style="width:175px"><colgroup><col style="width:24px"><col style="width:35px"><col style="width:35px"><col></colgroup>
+      <tr class="hd"><td colspan="4" style="padding:3px 6px">No. 1 through 17 must be checked (✓) Yes or No. Items checked Yes must be explained.</td></tr>
+      <tr class="hd"><td></td><td style="text-align:center">Yes</td><td style="text-align:center">No</td><td style="text-align:center">Were There Any</td></tr>
+      ${CHECKS.map((c,i)=>`<tr><td style="text-align:center">${i+1}</td><td class="mk">${ck[i]?'X':''}</td><td class="mk">${ck[i]?'':'X'}</td><td>${c}</td></tr>`).join('')}
+    </table></td>
+  <td>${act(pages[0].rows,83,462)}</td></tr></table>
+  <div class="foot"><span style="width:400px">Keys and equipment received in good order by:</span><span>Director's Approval:________________________</span></div>
+  ${N>1?`<div class="pgno">Page 1 of ${N}</div>`:''}`;
+  const SIG=`<div class="sig"><span><b>Officer Signature:</b>&nbsp; ________________________________</span><span><b>Date:</b>&nbsp; ____________________</span></div>`;
+  const out=[p1,...pages.slice(1).map((p,k)=>`<div class="banner">OFFICER'S DAILY ACTIVITY REPORT (CONTINUED)</div>
+    <div class="f" style="margin:10px 0"><span style="width:173px"><b>DATE:</b>&nbsp; ${E(shiftDate())}</span><span style="flex:1"><b>SUBMITTED BY:</b>&nbsp; ${E(H.officer||'')}</span><span style="font-size:11px">Page ${k+2} of ${N}</span></div>
+    ${act(p.rows,83,637)}`)];
+  out[out.length-1]+=SIG;
+  return out;
+}
+function layoutPreview(){
+  const box=document.getElementById('pvSize'),sc=document.getElementById('pvScroll');
+  const avail=sc.clientWidth-20,scale=pvZoomed?Math.max(1,avail/816):Math.min(1,avail/816);
+  let y=0;
+  box.querySelectorAll('.paper').forEach(p=>{p.style.transform=`scale(${scale})`;p.style.top=y+'px';y+=p.offsetHeight*scale+14});
+  box.style.width=(816*scale)+'px';box.style.height=y+'px';
+  document.getElementById('pvZoom').textContent=pvZoomed?'Fit to screen':'Zoom in';
+}
+function openPreview(){
+  document.getElementById('pvSize').innerHTML=previewPages().map(h=>`<div class="paper">${h}</div>`).join('');
+  const np=document.querySelectorAll('#pvSize .paper').length;document.getElementById('pvTitle').textContent=docxName().replace('.docx','')+(np>1?` · ${np} pages`:'');
+  pvZoomed=false;document.getElementById('pv').classList.remove('hide');layoutPreview();
+  document.getElementById('pvScroll').scrollTo(0,0);
+}
+document.querySelectorAll('[data-preview],#pvBtn').forEach(b=>b.onclick=openPreview);
+document.getElementById('pvClose').onclick=()=>document.getElementById('pv').classList.add('hide');
+document.getElementById('pvZoom').onclick=()=>{pvZoomed=!pvZoomed;layoutPreview()};
+window.addEventListener('resize',()=>{if(!document.getElementById('pv').classList.contains('hide'))layoutPreview()});
+
+/* ---------- account backup (db) ---------- */
+function normalize(){
+  if(!S.routes||!S.routes.length){S.routes=[{name:DEFAULT_ROUTE_NAME,stops:textToStops(SAMPLE)}];S.active=0}
+  if(!(S.active>=0&&S.active<S.routes.length))S.active=0;
+  if(!S.shift)S.shift=newShiftObj();
+  if(!S.shift.round)S.shift.round=1;
+  if(!S.shift.hist)S.shift.hist=[];
+  if(!S.officers)S.officers=[];
+  if(!S.freezers)S.freezers=['Dining Hall','Food Co-op'];
+}
+let CLOUD=null,cloudReady=false,cloudState='connecting',lastCloud=0,inFlight=false,dirty=false,cloudFailed=false,cloudTimer=null;
+const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej({code:'timeout'}),ms))]);
+const hm=ts=>{const d=new Date(ts);return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})};
+function syncText(){
+  if(cloudState==='off')return 'Saved on this phone after every tap. It stays saved when the app is closed or the phone is turned off.';
+  if(cloudState==='connecting')return 'Saved on this phone. Connecting to account backup…';
+  if((dirty||inFlight)&&(cloudFailed||!navigator.onLine))return 'Saved on this phone. '+(lastCloud?'Last backed up '+hm(lastCloud)+'; ':'')+'will back up when there\'s signal.';
+  if(dirty||inFlight)return 'Saved on this phone. Backing up…';
+  return 'Saved on this phone and backed up to your account at '+hm(lastCloud)+'.';
+}
+function showSync(){document.querySelectorAll('.syncStatus').forEach(el=>el.textContent=syncText())}
+function cloudSoon(){dirty=true;clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloud,1500);showSync()}
+function flushCloud(){
+  if(!CLOUD||!cloudReady||inFlight||!dirty)return;
+  inFlight=true;dirty=false;
+  withTimeout(CLOUD.set({json:JSON.stringify(S),savedAt:S.savedAt||Date.now()}),15000)
+    .then(()=>{lastCloud=Date.now();cloudFailed=false})
+    .catch(()=>{dirty=true;cloudFailed=true})
+    .finally(()=>{inFlight=false;showSync();if(dirty){clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloud,15000)}});
+}
+window.addEventListener('online',flushCloud);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'||navigator.onLine)flushCloud()});
+window.addEventListener('pagehide',flushCloud);
+/* First read the backup; only after that succeeds may this phone write to it,
+   so a phone whose local copy was wiped can never overwrite the night's backup with a blank one. */
+async function initialSync(){
+  try{
+    const snap=await withTimeout(CLOUD.get(),10000);
+    const d=snap.exists&&snap.data();
+    const localBlank=FRESH_START&&!S.shift.log.length&&!Object.keys(S.shift.marks).length;
+    if(d&&d.json&&(localBlank||(d.savedAt||0)>(S.savedAt||0))){
+      S=JSON.parse(d.json);normalize();
+      try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+      DOORS=flatten(R().stops);render();lastCloud=d.savedAt;
+      toast('Restored your saved shift');
+    }else if(d&&(d.savedAt||0)===(S.savedAt||0)){lastCloud=d.savedAt}
+    else dirty=true;
+    cloudReady=true;showSync();flushCloud();
+  }catch(e){setTimeout(initialSync,20000)}
+}
+window.addEventListener('online',()=>{if(CLOUD&&!cloudReady)initialSync()});
+/* Everything is kept on this phone; ask the browser to treat that storage as permanent. */
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+cloudState='off';
+
+/* ---------- full backup / restore ---------- */
+function backupText(){return JSON.stringify({app:'door-rounds',version:1,saved:new Date().toISOString(),data:S})}
+document.getElementById('bkSave').onclick=async()=>{
+  const name='Campus Security backup '+fmtDate(Date.now()).replace(/\//g,'.')+'.json';
+  try{const r=await shareOrSave(backupText(),name,'application/json');if(r==='downloaded')toast('Backup downloaded')}
+  catch(e){toast("Couldn't save the file, use Copy backup")}
+};
+document.getElementById('bkCopy').onclick=async()=>{
+  const txt=backupText();
+  try{await navigator.clipboard.writeText(txt);toast('Backup copied, paste it into Notes or an email')}
+  catch(e){openSheet(`<h2>Copy this backup</h2><p class="small">Select all of the text and copy it.</p><textarea rows="10" readonly>${esc(txt)}</textarea>${btnRow('<button class="sec" id="fCancel">Done</button>')}`,()=>{document.getElementById('fCancel').onclick=closeSheet})}
+};
+function applyBackup(txt){
+  let b;try{b=JSON.parse(txt.trim())}catch(e){toast("That isn't a Campus Security backup");return}
+  const d=b&&b.app==='door-rounds'?b.data:null;
+  if(!d||!d.routes){toast("That isn't a Campus Security backup");return}
+  const stops=d.routes.reduce((a,r)=>a+r.stops.length,0),ents=(d.shift&&d.shift.log||[]).length;
+  confirmBox(`Replace everything on this phone with this backup?<br><span class="small">${d.routes.length} route(s), ${stops} stops, ${ents} entries${b.saved?', saved '+new Date(b.saved).toLocaleString():''}.</span>`,'Restore',()=>{
+    S=d;normalize();save();DOORS=flatten(R().stops);closeSheet();render();toast('Backup restored');
+  });
+}
+document.getElementById('bkRestore').onclick=()=>openSheet(`<h2>Restore from backup</h2>
+  <label>Choose a backup file</label><input type="file" id="fFile" accept=".json,.txt,application/json,text/plain">
+  <label>…or paste the backup text</label><textarea id="fTxt" rows="6" spellcheck="false"></textarea>
+  ${btnRow('<button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Restore</button>')}`,()=>{
+  document.getElementById('fCancel').onclick=closeSheet;
+  document.getElementById('fFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>applyBackup(String(r.result));r.readAsText(f)};
+  document.getElementById('fSave').onclick=()=>{const t=document.getElementById('fTxt').value;if(t.trim())applyBackup(t)};
+});
+
+/* Show as many "Up next" doors (up to 4, at least 1) as fit without scrolling. */
+function fitUpNext(){
+  if(S.tab!=='rounds')return;
+  const up=document.getElementById('upNext');
+  while(up.children.length>1&&document.documentElement.scrollHeight>window.innerHeight)up.lastElementChild.remove();
+}
+let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(render,150)});
+render();
+/* Works with no signal: a small service worker keeps a copy of the app on the phone. */
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
