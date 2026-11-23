@@ -248,7 +248,7 @@ body.lock #upNext{flex:1;min-height:0;overflow:hidden}
   </div>
   <div class="card">
     <h2>Stops in order</h2>
-    <p class="small" style="margin:0 0 8px">Drag ☰ or use the arrows to reorder. Tap a stop to rename it or change its doors and their order.</p>
+    <p class="small" style="margin:0 0 8px">Drag ☰ on the right to reorder. Tap a stop to rename it or change its doors and their order.</p>
     <div class="row" style="margin-bottom:10px">
       <button class="sec" id="addStop">+ Add stop</button>
       <button class="sec" id="reverseR">Reverse</button>
@@ -379,9 +379,9 @@ function renderHist(){
   if(!sh.hist.length){el.innerHTML='<p class="small" style="margin:0">No doors checked yet.</p>';return}
   const rounds=[...new Set(sh.hist.map(h=>h.round))].sort((a,b)=>b-a);
   el.innerHTML=rounds.map(r=>{
-    const hs=sh.hist.filter(h=>h.round===r).sort((a,b)=>a.ts-b.ts);
+    const hs=sh.hist.filter(h=>h.round===r).sort((a,b)=>b.ts-a.ts); // latest first, so the list reads bottom-up into the next round
     const isOpen=openRounds[r]!==undefined?openRounds[r]:r===sh.round;
-    return `<details data-r="${r}" ${isOpen?'open':''} style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:700;padding:6px 0">Round ${r} · ${hs.length} door${hs.length===1?'':'s'} · ${hhmm(hs[0].ts)}–${hhmm(hs[hs.length-1].ts)}</summary>
+    return `<details data-r="${r}" ${isOpen?'open':''} style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:700;padding:6px 0">Round ${r} · ${hs.length} door${hs.length===1?'':'s'} · ${hhmm(hs[hs.length-1].ts)}–${hhmm(hs[0].ts)}</summary>
       <ul class="list">${hs.map(h=>`<li><span class="t">${hhmm(h.ts)}</span><span class="grow">${esc(h.b)}${h.d?' · '+esc(doorLabel(h)):''}</span><span class="tag ${STATE_TXT[h.st][1]}">${ST_SHORT[h.st]}</span></li>`).join('')}</ul></details>`;
   }).join('');
   el.querySelectorAll('details').forEach(d=>d.ontoggle=()=>{openRounds[d.dataset.r]=d.open});
@@ -597,10 +597,9 @@ let drag=null;
 function renderStops(){
   const st=R().stops;
   stopList.innerHTML=st.length?st.map((s,i)=>`<li data-i="${i}" class="${drag===i?'drag':''}">
-    <span class="h">☰</span><span class="num">${i+1}</span>
+    <span class="num">${i+1}</span>
     <span class="grow ed" data-edit="${i}">${esc(s.b)}<br><small>${s.doors.length?s.doors.map(esc).join(', '):'single stop'}</small></span>
-    <button class="arr" data-up="${i}" ${i?'':'disabled style="opacity:.3"'}>▲</button>
-    <button class="arr" data-dn="${i}" ${i<st.length-1?'':'disabled style="opacity:.3"'}>▼</button></li>`).join('')
+    <span class="h">☰</span></li>`).join('')
     :'<li class="small">No stops yet. Tap "+ Add stop".</li>';
 }
 stopList.addEventListener('click',e=>{

@@ -1,6 +1,6 @@
 /* Campus Security — keeps a copy of the app on the phone so it opens with no signal.
    Shows the saved copy right away, then quietly fetches any update for the next launch. */
-const CACHE = 'campus-security-v1';
+const CACHE = 'campus-security-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
