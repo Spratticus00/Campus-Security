@@ -174,7 +174,7 @@ body{background:radial-gradient(900px 520px at 50% -8%,#22448c 0%,#0d1a3a 48%,#0
 .b-ok:active{box-shadow:0 2px 0 #136a37,0 6px 14px rgba(34,170,90,.3)}
 .b-warn:active{box-shadow:0 2px 0 #985b00,0 6px 14px rgba(230,140,0,.25)}
 .b-bad:active{box-shadow:0 2px 0 #8d241d,0 6px 14px rgba(220,60,50,.25)}
-#newShift.b-bad,#dlDocx.b-ok{border-radius:16px}
+#newShift.b-ok,#dlDocx.b-ok{border-radius:16px}
 /* secondary buttons, fields, chips */
 .sec{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);border-radius:14px}
 .sec:active{background:rgba(255,255,255,.14)}
@@ -204,11 +204,14 @@ header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-
 .tabs .ic{width:23px;height:23px;display:block}
 .tabs button.on .ic{filter:drop-shadow(0 0 6px rgba(230,199,102,.55))}
 .upbtns{display:flex;gap:6px;align-items:stretch}
-.upbtns #nextRound{padding:7px 11px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap}
 .upbtns .jumpwrap{font-size:13px;padding:7px 11px;border-radius:10px;white-space:nowrap}
 .upbtns .sm{display:none}
 @media (max-width:379px){.upbtns .lg{display:none}.upbtns .sm{display:inline}}
 #histList .t{min-width:72px}
+#roundWrap.past{border-color:var(--gold);color:var(--gold);box-shadow:0 0 10px rgba(230,199,102,.35)}
+#v-rounds .prog{gap:10px}
+#v-rounds .prog span:first-child{min-width:0}
+#roundWrap{border:1px solid var(--gold)}
 </style>
 </head>
 <body>
@@ -234,7 +237,7 @@ header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-
     <button class="sec" id="skipBtn">Skip ▶</button>
   </div>
   <div class="card upcard">
-    <div class="uphead"><h2>Up next</h2><div class="upbtns"><button class="sec" id="nextRound"><span class="lg">Start next round</span><span class="sm">Next round</span></button><div class="jumpwrap"><select id="jump" aria-label="Jump to a door"></select><span><span class="lg">Jump to door ▾</span><span class="sm">Jump ▾</span></span></div></div></div>
+    <div class="uphead"><h2>Up next</h2><div class="upbtns"><div class="jumpwrap"><select id="jump" aria-label="Jump to a door"></select><span><span class="lg">Jump to door ▾</span><span class="sm">Jump ▾</span></span></div><div class="jumpwrap" id="roundWrap"><select id="roundSel" aria-label="Select round"></select><span><span class="lg">Select round ▾</span><span class="sm">Round ▾</span></span></div></div></div>
     <ul class="list up" id="upNext"></ul>
   </div>
 </section>
@@ -258,7 +261,7 @@ header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-
   <div class="card">
     <h2>New shift</h2>
     <p class="small" style="margin:0 0 10px">Clears tonight's marks, entries and checklist and starts back at the first door. Save the shift or download the report first.</p>
-    <button class="big b-bad" id="newShift" style="font-size:18px;padding:16px">Start new shift</button>
+    <button class="big b-ok" id="newShift" style="font-size:18px;padding:16px">Start new shift</button>
   </div>
   <div class="card">
     <h2>Shift details</h2>
@@ -473,7 +476,12 @@ function confirmBox(msg,okLabel,onOk){
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;save();render()});
 
 /* ---------- marking ---------- */
-document.getElementById('nextRound').onclick=()=>confirmBox(`Start round ${S.shift.round+1}?<br><span class="small">Goes back to the first door. Round ${S.shift.round}'s times and entries are kept.</span>`,'Start round '+(S.shift.round+1),startNextRound);
+document.getElementById('roundSel').onchange=e=>{
+  const v=e.target.value;
+  if(v==='new'){e.target.value=String(S.shift.round);
+    confirmBox(`Start round ${maxRound()+1}?<br><span class="small">Goes back to the first door. Earlier rounds' times and entries are kept.</span>`,'Start round '+(maxRound()+1),startNextRound);return}
+  switchRound(+v);
+};
 let busy=false;
 const FLASH={secure:['rgba(47,158,91,.55)','#1f7a44'],locked:['rgba(208,138,28,.55)','#a86a0c'],open:['rgba(201,71,61,.55)','#9e2f27']};
 function mark(st){
@@ -484,7 +492,10 @@ function mark(st){
 }
 function commitMark(st){
   const sh=S.shift;
-  const x=DOORS[sh.idx],rd=sh.round,ts=Date.now();
+  const x=DOORS[sh.idx],rd=sh.round,top=maxRound();
+  const prev=sh.hist.find(h=>h.doorId===x.id&&h.round===rd);
+  // changing a door in an earlier round keeps the time it was first checked
+  const ts=(rd<top&&prev)?prev.ts:Date.now();
   sh.marks[x.id]=st;
   // Only a re-tap of the same door in the SAME round replaces its earlier record (a correction).
   sh.log=sh.log.filter(e=>!(e.doorId===x.id&&(e.round||1)===rd));
@@ -496,10 +507,20 @@ function commitMark(st){
   if(!last)sh.idx++;
   save();render();
   if(st!=='secure')toast(st==='locked'?'Logged: Unlocked':'Logged: Not Latched');
-  if(last)confirmBox(`Round ${rd} complete.<br><span class="small">Start round ${rd+1} from the first door? Round ${rd}'s times are kept.</span>`,'Start round '+(rd+1),startNextRound);
+  if(last&&rd<top)toast(`End of the route for round ${rd}`);
+  if(last&&rd===top)confirmBox(`Round ${rd} complete.<br><span class="small">Start round ${rd+1} from the first door? Round ${rd}'s times are kept.</span>`,'Start round '+(rd+1),startNextRound);
 }
 document.querySelectorAll('[data-mark]').forEach(b=>b.onclick=()=>mark(b.dataset.mark));
-function startNextRound(){const sh=S.shift;sh.round++;sh.marks={};sh.idx=0;S.tab='rounds';save();render();toast('Round '+sh.round+' started')}
+/* Rounds: the officer can switch to any earlier round to fix a door, then come back. */
+function maxRound(){const sh=S.shift;return Math.max(sh.round||1,sh.maxRound||1,...sh.hist.map(h=>h.round),...sh.log.map(e=>e.round||1))}
+function marksFor(r){const m={};S.shift.hist.filter(h=>h.round===r).forEach(h=>m[h.doorId]=h.st);return m}
+function startNextRound(){const sh=S.shift,n=maxRound()+1;sh.maxRound=n;sh.round=n;sh.marks={};sh.idx=0;S.tab='rounds';save();render();toast('Round '+n+' started')}
+function switchRound(r){const sh=S.shift;if(r===sh.round)return;
+  // remember where the officer was in each round, so switching back returns to that door
+  sh.pos=sh.pos||{};const cur=DOORS[sh.idx];if(cur)sh.pos[sh.round]=cur.id;
+  sh.round=r;sh.marks=marksFor(r);
+  const back=sh.pos[r]?DOORS.findIndex(d=>d.id===sh.pos[r]):-1;if(back>=0)sh.idx=back;save();render();
+  toast(r<maxRound()?`Now changing round ${r}. Pick round ${maxRound()} to go back`:`Back to round ${r}`)}
 document.getElementById('backBtn').onclick=()=>{if(S.shift.idx>0){S.shift.idx--;save();render()}};
 document.getElementById('skipBtn').onclick=()=>{if(S.shift.idx<DOORS.length-1){S.shift.idx++;save();render()}};
 document.getElementById('jump').onchange=e=>{S.shift.idx=+e.target.value;save();render()};
@@ -818,7 +839,7 @@ function render(){
   const done=DOORS.filter(d=>sh.marks[d.id]).length;
   if(n){
     const x=DOORS[sh.idx];
-    document.getElementById('progTxt').textContent=`Round ${sh.round} · Door ${sh.idx+1} of ${n}`;
+    document.getElementById('progTxt').textContent=`Round ${sh.round}${sh.round<maxRound()?' of '+maxRound():''} · Door ${sh.idx+1} of ${n}`;
     document.getElementById('doneTxt').textContent=`${done} checked`;
     document.getElementById('progBar').style.width=(done/n*100)+'%';
     document.getElementById('curB').textContent=x.b;
@@ -834,6 +855,10 @@ function render(){
   up.innerHTML=DOORS.slice(sh.idx+1,sh.idx+25).map((d,k)=>`<li data-i="${sh.idx+1+k}"><span class="grow">${esc(d.b)}${d.d?' · '+esc(doorLabel(d)):''}</span>${sh.marks[d.id]?`<span class="tag ${STATE_TXT[sh.marks[d.id]][1]}">${STATE_TXT[sh.marks[d.id]][0]}</span>`:''}</li>`).join('')||'<li class="small">End of route</li>';
   up.querySelectorAll('li[data-i]').forEach(li=>li.onclick=()=>{sh.idx=+li.dataset.i;save();render()});
   fitUpNext();
+  {const top=maxRound(),rs=document.getElementById('roundSel');
+   let o='';for(let r=1;r<=top;r++){const n=sh.hist.filter(h=>h.round===r).length;o+=`<option value="${r}" ${r===sh.round?'selected':''}>Round ${r} · ${n} door${n===1?'':'s'} checked${r===top?' (latest)':''}</option>`}
+   rs.innerHTML=o+`<option value="new">+ Start round ${top+1}</option>`;rs.value=String(sh.round);
+   document.getElementById('roundWrap').classList.toggle('past',sh.round<top);}
   document.getElementById('jump').innerHTML=DOORS.map((d,i)=>`<option value="${i}" ${i===sh.idx?'selected':''}>${i+1}. ${esc(d.b)}${d.d?' · '+esc(doorLabel(d)):''}${sh.marks[d.id]?' ✓':''}</option>`).join('');
 
   const L=sortedLog(),ll=document.getElementById('logList');
