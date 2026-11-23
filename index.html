@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Campus Security">
-<meta name="theme-color" content="#0e1013">
+<meta name="theme-color" content="#070c19">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -151,6 +151,58 @@ body.lock #upNext{flex:1;min-height:0;overflow:hidden}
 #upNext li{padding:8px 0;font-size:15px;align-items:center;overflow-wrap:anywhere}
 .jumpwrap{position:relative;background:var(--panel2);border-radius:10px;display:flex;align-items:center;padding:7px 12px;font-weight:600;font-size:13px}
 .jumpwrap select{position:absolute;inset:0;opacity:0;width:100%;height:100%;padding:0}
+
+/* ===== Night Ops look, with gold lettering ===== */
+:root{--bg:#070c19;--panel:rgba(255,255,255,.06);--panel2:rgba(255,255,255,.09);--line:rgba(255,255,255,.10);--text:#f2f5fb;--mute:#9fb0cc;--acc:#5b9bff;--gold:#e6c766}
+html{background:#070c19}
+body{background:radial-gradient(900px 520px at 50% -8%,#22448c 0%,#0d1a3a 48%,#070c19 100%) fixed #070c19}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.12);border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+/* gold lettering */
+.card h2,.uphead h2,.sheet h2{color:var(--gold);text-transform:uppercase;letter-spacing:.08em;font-size:14px}
+#v-rounds .prog{color:#cdb46a;text-transform:uppercase;letter-spacing:.06em;font-size:11.5px}
+.tabs button.on{color:var(--gold)}
+/* patrol card */
+#v-rounds .bldg{font-weight:800;letter-spacing:-.01em}
+#v-rounds .bar{background:rgba(255,255,255,.1)}
+#v-rounds .bar i{background:linear-gradient(90deg,#5b9bff,#8ec5ff);box-shadow:0 0 10px #5b9bff}
+/* raised status buttons */
+.big{border-radius:20px;text-shadow:0 1px 2px rgba(0,0,0,.25);letter-spacing:.01em}
+.b-ok{background:linear-gradient(180deg,#43d17f,#1f9a52);box-shadow:0 5px 0 #136a37,0 12px 26px rgba(34,170,90,.35)}
+.b-warn{background:linear-gradient(180deg,#ffbd4a,#e08600);box-shadow:0 5px 0 #985b00,0 12px 26px rgba(230,140,0,.3)}
+.b-bad{background:linear-gradient(180deg,#ff6e61,#d23a2f);box-shadow:0 5px 0 #8d241d,0 12px 26px rgba(220,60,50,.3)}
+.big:active{transform:translateY(3px);filter:brightness(.95)}
+.b-ok:active{box-shadow:0 2px 0 #136a37,0 6px 14px rgba(34,170,90,.3)}
+.b-warn:active{box-shadow:0 2px 0 #985b00,0 6px 14px rgba(230,140,0,.25)}
+.b-bad:active{box-shadow:0 2px 0 #8d241d,0 6px 14px rgba(220,60,50,.25)}
+#newShift.b-bad,#dlDocx.b-ok{border-radius:16px}
+/* secondary buttons, fields, chips */
+.sec{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);border-radius:14px}
+.sec:active{background:rgba(255,255,255,.14)}
+input,textarea,select{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);border-radius:12px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(91,155,255,.25)}
+select option{background:#0f1b38;color:#f2f5fb}
+.chips button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px}
+.chips button.on{background:var(--acc);border-color:var(--acc);box-shadow:0 0 12px rgba(91,155,255,.45)}
+.jumpwrap{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12)}
+.list li,#upNext li{border-color:rgba(255,255,255,.07)}
+.state{background:rgba(255,255,255,.09)}
+/* pop-ups */
+.sheet{background:linear-gradient(180deg,#15244a,#0b1430);border-top:1px solid rgba(255,255,255,.14);box-shadow:0 -12px 40px rgba(0,0,0,.5)}
+.cfbox{background:linear-gradient(180deg,#15244a,#0d1736);border:1px solid rgba(255,255,255,.14);border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.55)}
+.modal,.cf{background:rgba(3,6,14,.65);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.pv{background:#0a1124}.pvbar{background:rgba(8,14,30,.92);border-bottom:1px solid rgba(255,255,255,.08)}
+.toast{background:#f2f5fb;color:#0b1430;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+/* rounds in Door check times */
+.rnd{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-left:5px solid var(--acc);border-radius:16px}
+.rnd summary{background:linear-gradient(90deg,rgba(91,155,255,.22),rgba(91,155,255,.06))}
+.rbadge{background:linear-gradient(180deg,#6aa6ff,#3f7ff0);box-shadow:0 0 12px rgba(91,155,255,.5)}
+/* drag bubble */
+.ghost{background:linear-gradient(180deg,#1c2f5e,#13224a);border-color:var(--acc);box-shadow:0 14px 34px rgba(0,0,0,.6),0 0 0 1px rgba(91,155,255,.4)}
+/* bottom tabs with icons */
+header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.08)}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;padding:8px 4px 10px;border-top:0}
+.tabs .ic{width:23px;height:23px;display:block}
+.tabs button.on .ic{filter:drop-shadow(0 0 6px rgba(230,199,102,.55))}
 </style>
 </head>
 <body>
@@ -297,10 +349,10 @@ body.lock #upNext{flex:1;min-height:0;overflow:hidden}
 </main>
 <header>
   <div class="tabs">
-    <button data-tab="rounds" class="on">Patrol</button>
-    <button data-tab="log">Log</button>
-    <button data-tab="report">Report</button>
-    <button data-tab="route">Route</button>
+    <button data-tab="rounds" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.8-3.4 8-8 9-4.6-1-8-4.2-8-9V6z"/></svg></span>Patrol</button>
+    <button data-tab="report"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg></span>Report</button>
+    <button data-tab="log"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></span>Log</button>
+    <button data-tab="route"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span>Route</button>
   </div>
 </header>
 
