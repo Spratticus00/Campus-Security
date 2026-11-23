@@ -272,15 +272,15 @@ body.lock #upNext{flex:1;min-height:0;overflow:hidden}
     <button class="sec" id="saveFrz" style="margin-top:10px;width:100%">Save freezers</button>
   </div>
   <div class="card">
-    <h2>Saving &amp; backup</h2>
+    <h2>Saving &amp; shifts</h2>
     <p class="small" style="margin:0 0 8px">Everything (routes, tonight's taps, notes and report details) is saved on this phone after every tap. Closing the app or turning off the phone won't lose anything. Clearing Safari's website data would erase it, so keep a copy of your route (Copy route) in Notes.</p>
     <p class="small syncStatus" style="margin:0;color:var(--text)"></p>
-    <p class="small" style="margin:10px 0 8px"><b style="color:var(--text)">Back up everything</b> (all routes, stops, tonight's entries, names and report details) before an app update or whenever you've made big changes. Email the file to yourself or keep it in Files.</p>
+    <p class="small" style="margin:10px 0 8px"><b style="color:var(--text)">Save a shift</b> to keep a copy of that shift only: its door marks, entries, door check times, checklist and report details. Restoring a shift replaces just the current shift. Your routes, officer names and freezers are never changed by it. (To back up a route, use <b>Copy route</b> above.)</p>
     <div class="row">
-      <button class="sec" id="bkSave" style="background:var(--acc)">Save backup file</button>
-      <button class="sec" id="bkCopy">Copy backup</button>
+      <button class="sec" id="bkSave" style="background:var(--acc)">Save shift</button>
+      <button class="sec" id="bkCopy">Copy shift</button>
     </div>
-    <button class="sec" id="bkRestore" style="width:100%;margin-top:8px">Restore from backup</button>
+    <button class="sec" id="bkRestore" style="width:100%;margin-top:8px">Restore shift</button>
   </div>
 </section>
 </main>
@@ -567,7 +567,7 @@ function currentReportText(){return autoText()}
 function renderReportText(){document.getElementById('repText').value=autoText()}
 if(S.shift&&S.shift.repEdit){delete S.shift.repEdit;save()}
 document.getElementById('copyAll').onclick=()=>copy(repLines().map(l=>{const k=l.indexOf('\t');return k<0?l:l.slice(0,k)+'  '+l.slice(k+1)}).join('\n'),'Report copied with times');
-document.getElementById('newShift').onclick=()=>confirmBox('Start a new shift?<br><span class="small">This clears tonight\'s door marks, entries and checklist. Download or copy your report first.</span>','Start new shift',()=>{S.shift=newShiftObj();S.tab='rounds';save();render();toast('New shift started')});
+document.getElementById('newShift').onclick=()=>confirmBox('Start a new shift?<br><span class="small">This clears tonight\'s door marks, entries and checklist. Save the shift or download the report first.</span>','Start new shift',()=>{S.shift=newShiftObj();S.tab='rounds';save();render();toast('New shift started')});
 
 /* ---------- route ---------- */
 const move=(a,from,to)=>{const [x]=a.splice(from,1);a.splice(to,0,x)};
@@ -1069,34 +1069,50 @@ window.addEventListener('online',()=>{if(CLOUD&&!cloudReady)initialSync()});
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 cloudState='off';
 
-/* ---------- full backup / restore ---------- */
-function backupText(){return JSON.stringify({app:'door-rounds',version:1,saved:new Date().toISOString(),data:S})}
+/* ---------- save / restore one shift (routes, names and freezers are never touched) ---------- */
+function shiftText(){
+  const cur=DOORS[S.shift.idx];
+  return JSON.stringify({app:'door-rounds',kind:'shift',version:2,saved:new Date().toISOString(),route:R().name,door:cur?cur.id:null,data:S.shift});
+}
 document.getElementById('bkSave').onclick=async()=>{
-  const name='Campus Security backup '+fmtDate(Date.now()).replace(/\//g,'.')+'.json';
-  try{const r=await shareOrSave(backupText(),name,'application/json');if(r==='downloaded')toast('Backup downloaded')}
-  catch(e){toast("Couldn't save the file, use Copy backup")}
+  const name='Campus Security shift '+shiftDate().replace(/\//g,'.')+'.json';
+  try{const r=await shareOrSave(shiftText(),name,'application/json');if(r==='downloaded')toast('Shift downloaded')}
+  catch(e){toast("Couldn't save the file, use Copy shift")}
 };
 document.getElementById('bkCopy').onclick=async()=>{
-  const txt=backupText();
-  try{await navigator.clipboard.writeText(txt);toast('Backup copied, paste it into Notes or an email')}
-  catch(e){openSheet(`<h2>Copy this backup</h2><p class="small">Select all of the text and copy it.</p><textarea rows="10" readonly>${esc(txt)}</textarea>${btnRow('<button class="sec" id="fCancel">Done</button>')}`,()=>{document.getElementById('fCancel').onclick=closeSheet})}
+  const txt=shiftText();
+  try{await navigator.clipboard.writeText(txt);toast('Shift copied, paste it into Notes or an email')}
+  catch(e){openSheet(`<h2>Copy this shift</h2><p class="small">Select all of the text and copy it.</p><textarea rows="10" readonly>${esc(txt)}</textarea>${btnRow('<button class="sec" id="fCancel">Done</button>')}`,()=>{document.getElementById('fCancel').onclick=closeSheet})}
 };
-function applyBackup(txt){
-  let b;try{b=JSON.parse(txt.trim())}catch(e){toast("That isn't a Campus Security backup");return}
-  const d=b&&b.app==='door-rounds'?b.data:null;
-  if(!d||!d.routes){toast("That isn't a Campus Security backup");return}
-  const stops=d.routes.reduce((a,r)=>a+r.stops.length,0),ents=(d.shift&&d.shift.log||[]).length;
-  confirmBox(`Replace everything on this phone with this backup?<br><span class="small">${d.routes.length} route(s), ${stops} stops, ${ents} entries${b.saved?', saved '+new Date(b.saved).toLocaleString():''}.</span>`,'Restore',()=>{
-    S=d;normalize();save();DOORS=flatten(R().stops);closeSheet();render();toast('Backup restored');
+function applyShift(txt){
+  let b;try{b=JSON.parse(txt.trim())}catch(e){toast("That isn't a saved shift");return}
+  if(!b||b.app!=='door-rounds'||!b.data){toast("That isn't a saved shift");return}
+  // saved shift files, plus older full backups (only their shift part is used)
+  let sh,routeName=b.route,door=b.door;
+  if(b.kind==='shift')sh=b.data;
+  else if(b.data.shift){sh=b.data.shift;const rs=b.data.routes||[];routeName=rs[b.data.active||0]&&rs[b.data.active||0].name;}
+  if(!sh||!Array.isArray(sh.log)){toast("That isn't a saved shift");return}
+  const ents=sh.log.length,checked=(sh.hist||[]).length;
+  const when=sh.hdr&&sh.hdr.date?sh.hdr.date:fmtDate(sh.log.length?Math.min(...sh.log.map(e=>e.ts)):sh.started);
+  confirmBox(`Restore the shift from ${esc(when)}?<br><span class="small">${ents} report entries, ${checked} door checks${routeName?', route "'+esc(routeName)+'"':''}. This replaces the current shift (${S.shift.log.length} entries). Routes, officer names and freezers are not changed.</span>`,'Restore shift',()=>{
+    S.shift=sh;normalize();
+    if(!S.shift.round)S.shift.round=1;if(!S.shift.hist)S.shift.hist=[];if(!S.shift.marks)S.shift.marks={};
+    const k=routeName?S.routes.findIndex(r=>r.name===routeName):-1;
+    if(k>=0)S.active=k;
+    DOORS=flatten(R().stops);
+    const di=door?DOORS.findIndex(d=>d.id===door):-1;
+    S.shift.idx=di>=0?di:Math.min(S.shift.idx||0,Math.max(0,DOORS.length-1));
+    save();closeSheet();render();
+    toast(routeName&&k<0?'Shift restored (route "'+routeName+'" isn\'t on this phone)':'Shift restored');
   });
 }
-document.getElementById('bkRestore').onclick=()=>openSheet(`<h2>Restore from backup</h2>
-  <label>Choose a backup file</label><input type="file" id="fFile" accept=".json,.txt,application/json,text/plain">
-  <label>…or paste the backup text</label><textarea id="fTxt" rows="6" spellcheck="false"></textarea>
+document.getElementById('bkRestore').onclick=()=>openSheet(`<h2>Restore shift</h2>
+  <label>Choose a saved shift file</label><input type="file" id="fFile" accept=".json,.txt,application/json,text/plain">
+  <label>…or paste the copied shift text</label><textarea id="fTxt" rows="6" spellcheck="false"></textarea>
   ${btnRow('<button class="sec" id="fCancel">Cancel</button><button class="sec" style="background:var(--acc)" id="fSave">Restore</button>')}`,()=>{
   document.getElementById('fCancel').onclick=closeSheet;
-  document.getElementById('fFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>applyBackup(String(r.result));r.readAsText(f)};
-  document.getElementById('fSave').onclick=()=>{const t=document.getElementById('fTxt').value;if(t.trim())applyBackup(t)};
+  document.getElementById('fFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>applyShift(String(r.result));r.readAsText(f)};
+  document.getElementById('fSave').onclick=()=>{const t=document.getElementById('fTxt').value;if(t.trim())applyShift(t)};
 });
 
 /* Show as many "Up next" doors (up to 4, at least 1) as fit without scrolling. */
