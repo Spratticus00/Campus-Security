@@ -60,7 +60,23 @@ label{display:block;font-size:14px;color:var(--mute);margin:10px 0 4px}
 .tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:10px}
 pre{white-space:pre-wrap;margin:0;font:inherit}
 #stopList li{align-items:center;background:var(--panel);touch-action:pan-y}
-#stopList li.drag{background:var(--panel2);outline:2px solid var(--acc);border-radius:10px}
+#stopList li.slide{transition:transform .2s ease}
+#stopList li.gap{visibility:hidden}
+.ghost{position:fixed;z-index:50;list-style:none;display:flex;gap:10px;align-items:center;padding:10px 8px;margin:0;
+  background:var(--panel2);border:1px solid var(--acc);border-radius:14px;pointer-events:none;
+  box-shadow:0 10px 28px rgba(0,0,0,.55);transition:transform .15s ease,box-shadow .15s ease;touch-action:none}
+.ghost.up{transform:scale(1.04)}
+.ghost.land{transition:top .18s ease,transform .18s ease,box-shadow .18s ease;transform:scale(1);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.ghost .h{color:var(--acc)}
+/* each round in Door check times is its own highlighted block */
+.rnd{border:1px solid var(--line);border-left:5px solid var(--acc);border-radius:12px;background:var(--panel2);margin-bottom:12px;overflow:hidden}
+.rnd summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:11px 12px;background:rgba(76,141,255,.14)}
+.rnd summary::-webkit-details-marker{display:none}
+.rbadge{background:var(--acc);color:#fff;font-weight:800;font-size:15px;padding:4px 11px;border-radius:20px;letter-spacing:.02em}
+.rinfo{flex:1;font-size:14px;font-weight:600;color:var(--text)}
+.rchev{color:var(--mute);transition:transform .2s}
+.rnd:not([open]) .rchev{transform:rotate(-90deg)}
+.rnd .list{padding:2px 12px 6px}
 .h{touch-action:none;padding:8px 10px;color:var(--mute);font-size:20px;cursor:grab;user-select:none;-webkit-user-select:none}
 .arr{background:var(--panel2);padding:8px 12px;font-size:14px}
 .num{color:var(--mute);font-size:13px;min-width:22px;text-align:right}
@@ -381,7 +397,7 @@ function renderHist(){
   el.innerHTML=rounds.map(r=>{
     const hs=sh.hist.filter(h=>h.round===r).sort((a,b)=>b.ts-a.ts); // latest first, so the list reads bottom-up into the next round
     const isOpen=openRounds[r]!==undefined?openRounds[r]:r===sh.round;
-    return `<details data-r="${r}" ${isOpen?'open':''} style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:700;padding:6px 0">Round ${r} · ${hs.length} door${hs.length===1?'':'s'} · ${hhmm(hs[hs.length-1].ts)}–${hhmm(hs[0].ts)}</summary>
+    return `<details class="rnd" data-r="${r}" ${isOpen?'open':''}><summary><span class="rbadge">Round ${r}</span><span class="rinfo">${hhmm(hs[hs.length-1].ts)}–${hhmm(hs[0].ts)} · ${hs.length} door${hs.length===1?'':'s'}</span><span class="rchev">▾</span></summary>
       <ul class="list">${hs.map(h=>`<li><span class="t">${hhmm(h.ts)}</span><span class="grow">${esc(h.b)}${h.d?' · '+esc(doorLabel(h)):''}</span><span class="tag ${STATE_TXT[h.st][1]}">${ST_SHORT[h.st]}</span></li>`).join('')}</ul></details>`;
   }).join('');
   el.querySelectorAll('details').forEach(d=>d.ontoggle=()=>{openRounds[d.dataset.r]=d.open});
@@ -593,10 +609,9 @@ document.getElementById('rDelete').onclick=()=>{
 
 /* stop list: arrows, tap to edit, drag */
 const stopList=document.getElementById('stopList');
-let drag=null;
 function renderStops(){
   const st=R().stops;
-  stopList.innerHTML=st.length?st.map((s,i)=>`<li data-i="${i}" class="${drag===i?'drag':''}">
+  stopList.innerHTML=st.length?st.map((s,i)=>`<li data-i="${i}" >
     <span class="num">${i+1}</span>
     <span class="grow ed" data-edit="${i}">${esc(s.b)}<br><small>${s.doors.length?s.doors.map(esc).join(', '):'single stop'}</small></span>
     <span class="h">☰</span></li>`).join('')
@@ -609,18 +624,56 @@ stopList.addEventListener('click',e=>{
   else if(t.dataset.dn){const i=+t.dataset.dn;move(st,i,i+1);routeChanged()}
   else editStop(+t.dataset.edit);
 });
+/* Drag to reorder: the picked-up stop floats under your finger as a bubble,
+   and the other stops slide up or down to open a gap where it will land. */
+let D=null;
 stopList.addEventListener('pointerdown',e=>{
-  const h=e.target.closest('.h');if(!h)return;
-  e.preventDefault();drag=+h.parentElement.dataset.i;renderStops();
+  const h=e.target.closest('.h');if(!h||D)return;
+  e.preventDefault();
+  const li=h.closest('li'),items=[...stopList.children],from=items.indexOf(li);
+  const sy=window.scrollY,rects=items.map(x=>{const r=x.getBoundingClientRect();return{top:r.top+sy,h:r.height}});
+  const r0=li.getBoundingClientRect();
+  const ghost=li.cloneNode(true);ghost.className='ghost';
+  Object.assign(ghost.style,{left:r0.left+'px',top:r0.top+'px',width:r0.width+'px'});
+  document.body.appendChild(ghost);
+  requestAnimationFrame(()=>ghost.classList.add('up'));
+  li.classList.add('gap');
+  items.forEach(x=>{if(x!==li)x.classList.add('slide')});
+  D={li,items,rects,from,to:from,ghost,off:e.clientY-r0.top,h:r0.height,y:e.clientY};
+  try{h.setPointerCapture(e.pointerId)}catch(_){}
 });
+function dragTo(clientY){
+  const{items,rects,from,ghost,off,h}=D;
+  ghost.style.top=(clientY-off)+'px';
+  const center=clientY-off+window.scrollY+h/2;
+  let to=from;
+  rects.forEach((r,k)=>{const mid=r.top+r.h/2;if(k<from&&center<mid)to=Math.min(to,k);if(k>from&&center>mid)to=Math.max(to,k)});
+  if(to!==D.to){
+    D.to=to;
+    items.forEach((x,k)=>{if(k===from)return;
+      const sh=(k>from&&k<=to)?-h:(k<from&&k>=to)?h:0;
+      x.style.transform=sh?`translateY(${sh}px)`:''});
+  }
+}
+let scrollTimer=null;
 window.addEventListener('pointermove',e=>{
-  if(drag===null)return;e.preventDefault();
-  if(e.clientY<70)window.scrollBy(0,-12);else if(e.clientY>window.innerHeight-70)window.scrollBy(0,12);
-  const lis=[...stopList.children];let to=lis.length-1;
-  for(let k=0;k<lis.length;k++){const r=lis[k].getBoundingClientRect();if(e.clientY<r.top+r.height/2){to=k;break}}
-  if(to!==drag){move(R().stops,drag,to);drag=to;renderStops()}
+  if(!D)return;e.preventDefault();D.y=e.clientY;dragTo(e.clientY);
+  const edge=e.clientY<80?-1:e.clientY>window.innerHeight-80?1:0;
+  clearInterval(scrollTimer);
+  if(edge)scrollTimer=setInterval(()=>{window.scrollBy(0,edge*10);dragTo(D.y)},16);
 },{passive:false});
-const endDrag=()=>{if(drag===null)return;drag=null;routeChanged()};
+function endDrag(){
+  if(!D)return;clearInterval(scrollTimer);
+  const{li,items,rects,from,to,ghost,h}=D;D=null;
+  // glide the bubble into its new slot, then save the new order
+  const slotTop=(to>from?rects[to].top+rects[to].h-h:rects[to].top)-window.scrollY;
+  ghost.classList.remove('up');ghost.classList.add('land');ghost.style.top=slotTop+'px';
+  setTimeout(()=>{
+    ghost.remove();
+    items.forEach(x=>{x.classList.remove('slide');x.style.transform=''});li.classList.remove('gap');
+    if(to!==from){move(R().stops,from,to);routeChanged()}else renderStops();
+  },200);
+}
 window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
 
 /* edit one stop */
