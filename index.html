@@ -212,11 +212,18 @@ header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-
 #v-rounds .prog{gap:10px}
 #v-rounds .prog span:first-child{min-width:0}
 #roundWrap{border:1px solid var(--gold)}
+#prevBar{position:sticky;top:0;z-index:12;display:flex;align-items:center;gap:12px;padding:8px 12px;background:linear-gradient(90deg,rgba(230,199,102,.22),rgba(230,199,102,.08));border-bottom:1px solid rgba(230,199,102,.55);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+#prevBar b{color:var(--gold);letter-spacing:.08em;font-size:13px}
+#prevBar div{font-size:12.5px;color:var(--text);line-height:1.3}
+#prevClose{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.12);border:1px solid rgba(230,199,102,.6);color:#fff;font-size:24px;font-weight:700;line-height:1}
+body.lock #prevBar{flex:none;position:static}
+body.prevmode{background:radial-gradient(900px 520px at 50% -8%,#5a4a1a 0%,#1d1a2c 48%,#070c19 100%) fixed #070c19}
 </style>
 </head>
 <body>
 
 
+<div id="prevBar" class="hide"><button id="prevClose" aria-label="Close previous shift">✕</button><div><b>PREVIOUS SHIFT</b><span id="prevBarDate"></span></div></div>
 <main>
 <!-- ROUNDS -->
 <section id="v-rounds">
@@ -253,6 +260,11 @@ header{background:rgba(8,14,30,.82);-webkit-backdrop-filter:blur(16px);backdrop-
     <h2>Door check times</h2>
     <p class="small" style="margin:0 0 8px">The exact time, to the second, each door was checked, every round. For your reference only: this doesn't go on the report.</p>
     <div id="histList"></div>
+  </div>
+  <div class="card" id="prevCard">
+    <h2>Previous shift</h2>
+    <p class="small" id="prevInfo" style="margin:0 0 10px"></p>
+    <button class="big b-ok" id="prevOpen" style="font-size:17px;padding:15px">Open previous shift</button>
   </div>
 </section>
 
@@ -407,6 +419,7 @@ if(!S.routes){S.routes=[{name:DEFAULT_ROUTE_NAME,stops:textToStops(S.routeText||
 if(!(S.active>=0&&S.active<S.routes.length))S.active=0;
 const R=()=>S.routes[S.active];
 normalize();
+if(S.viewingPrev&&!(S.viewHold&&S.prevShift))S.viewingPrev=false;
 if(!S.shift.round)S.shift.round=1;
 if(!S.shift.hist)S.shift.hist=[];
 let DOORS=flatten(R().stops);
@@ -494,8 +507,8 @@ function commitMark(st){
   const sh=S.shift;
   const x=DOORS[sh.idx],rd=sh.round,top=maxRound();
   const prev=sh.hist.find(h=>h.doorId===x.id&&h.round===rd);
-  // changing a door in an earlier round keeps the time it was first checked
-  const ts=(rd<top&&prev)?prev.ts:Date.now();
+  // changing a door in an earlier round, or in the previous shift, keeps the time it was first checked
+  const ts=((rd<top||S.viewingPrev)&&prev)?prev.ts:Date.now();
   sh.marks[x.id]=st;
   // Only a re-tap of the same door in the SAME round replaces its earlier record (a correction).
   sh.log=sh.log.filter(e=>!(e.doorId===x.id&&(e.round||1)===rd));
@@ -661,7 +674,48 @@ function currentReportText(){return autoText()}
 function renderReportText(){document.getElementById('repText').value=autoText()}
 if(S.shift&&S.shift.repEdit){delete S.shift.repEdit;save()}
 document.getElementById('copyAll').onclick=()=>copy(repLines().map(l=>{const k=l.indexOf('\t');return k<0?l:l.slice(0,k)+'  '+l.slice(k+1)}).join('\n'),'Report copied with times');
-document.getElementById('newShift').onclick=()=>confirmBox('Start a new shift?<br><span class="small">This clears tonight\'s door marks, entries and checklist. Save the shift or download the report first.</span>','Start new shift',()=>{S.shift=newShiftObj();S.tab='rounds';save();render();toast('New shift started')});
+document.getElementById('newShift').onclick=()=>{
+  if(S.viewingPrev){toast('Close the previous shift (✕ at the top) first');return}
+  confirmBox(`Start a new shift?<br><span class="small">This clears the current door marks, entries and checklist. A copy of this shift is kept at the bottom of the <b>Log</b> tab under <b>Previous shift</b>, where you can open and change it. It stays there until the next new shift is started${S.prevShift?', which replaces the copy kept now ('+esc(prevDate())+')':''}.</span>`,'Start new shift',()=>{
+    S.prevShift={shift:S.shift,route:R().name,saved:Date.now()};
+    S.shift=newShiftObj();S.tab='rounds';save();render();toast('New shift started. Previous shift is in the Log tab');
+  });
+};
+/* ---------- previous shift: opened in place of the current one, then swapped back ---------- */
+function shiftDateOf(sh){const v=(sh.hdr&&sh.hdr.date||'').trim();if(v)return v;const L=sh.log||[],H=sh.hist||[],all=[...L.map(e=>e.ts),...H.map(h=>h.ts)];return fmtDate(all.length?Math.min(...all):sh.started)}
+function prevDate(){return S.prevShift?shiftDateOf(S.prevShift.shift):''}
+function openPrev(){
+  if(!S.prevShift||S.viewingPrev)return;
+  S.viewHold={shift:S.shift,route:R().name};
+  S.shift=S.prevShift.shift;
+  const k=S.routes.findIndex(r=>r.name===S.prevShift.route);if(k>=0)S.active=k;
+  S.viewingPrev=true;DOORS=flatten(R().stops);
+  if(S.shift.idx>=DOORS.length)S.shift.idx=Math.max(0,DOORS.length-1);
+  S.tab='rounds';save();render();toast('Opened previous shift ('+prevDate()+')');
+}
+function closePrev(){
+  if(!S.viewingPrev)return;
+  S.prevShift.shift=S.shift;S.prevShift.route=R().name;
+  const hold=S.viewHold||{shift:newShiftObj()};
+  S.shift=hold.shift;
+  const k=S.routes.findIndex(r=>r.name===hold.route);if(k>=0)S.active=k;
+  delete S.viewHold;S.viewingPrev=false;DOORS=flatten(R().stops);
+  if(S.shift.idx>=DOORS.length)S.shift.idx=Math.max(0,DOORS.length-1);
+  S.tab='rounds';save();render();toast('Back to the current shift');
+}
+document.getElementById('prevOpen').onclick=openPrev;
+document.getElementById('prevClose').onclick=closePrev;
+function renderPrev(){
+  const on=!!S.viewingPrev;
+  document.body.classList.toggle('prevmode',on);
+  document.getElementById('prevBar').classList.toggle('hide',!on);
+  if(on)document.getElementById('prevBarDate').textContent=' · '+shiftDateOf(S.shift)+' · changes save automatically';
+  const info=document.getElementById('prevInfo'),btn=document.getElementById('prevOpen');
+  if(on){info.textContent="You're working in the previous shift now. Tap ✕ at the top to return to the current shift.";btn.classList.add('hide');}
+  else if(S.prevShift){const sh=S.prevShift.shift,n=(sh.log||[]).length,c=(sh.hist||[]).length;
+    info.textContent=`${shiftDateOf(sh)} · ${n} report entr${n===1?'y':'ies'} · ${c} door check${c===1?'':'s'}. Open it to change anything; the current shift is kept as it is.`;btn.classList.remove('hide');}
+  else{info.textContent='When you start a new shift, a copy of the one it replaces is kept here.';btn.classList.add('hide');}
+}
 
 /* ---------- route ---------- */
 const move=(a,from,to)=>{const [x]=a.splice(from,1);a.splice(to,0,x)};
@@ -869,6 +923,7 @@ function render(){
   if(S.tab==='report')renderHeader();
   if(S.tab==='report')renderReportText();
   renderHist();
+  renderPrev();
 
   if(S.tab==='route'){
     document.getElementById('routeSel').innerHTML=S.routes.map((r,i)=>`<option value="${i}" ${i===S.active?'selected':''}>${esc(r.name)}</option>`).join('');
